@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVP Protocol - Agent Vault Protocol</title>
+    <meta name="description" content="Open standard for secure AI agent credential management. Protect your API keys with hardware-backed security.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="assets/avp-icon.svg">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="logo">
+                <img src="assets/avp-logo.svg" alt="AVP Protocol" height="40">
+                <span>AVP Protocol</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#implementations">Implementations</a></li>
+                <li><a href="#nexusclaw">NexusClaw</a></li>
+                <li><a href="https://github.com/avp-protocol/spec" class="btn btn-outline">Specification</a></li>
+                <li><a href="https://github.com/avp-protocol" class="btn btn-primary">GitHub</a></li>
+            </ul>
+            <button class="mobile-menu-btn" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Secure Credentials for <span class="gradient-text">AI Agents</span></h1>
+                <p class="hero-subtitle">
+                    Open standard for protecting API keys, tokens, and secrets.
+                    From environment variables to hardware security modules.
+                </p>
+                <div class="hero-buttons">
+                    <a href="https://github.com/avp-protocol/spec" class="btn btn-primary btn-large">
+                        Read the Spec
+                    </a>
+                    <a href="#implementations" class="btn btn-outline btn-large">
+                        Get Started
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">7</span>
+                        <span class="stat-label">Core Operations</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">4</span>
+                        <span class="stat-label">Backend Types</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">5</span>
+                        <span class="stat-label">Transports</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">agent.py</span>
+                    </div>
+                    <pre><code><span class="keyword">from</span> avp <span class="keyword">import</span> Vault
+<span class="keyword">from</span> langchain_anthropic <span class="keyword">import</span> ChatAnthropic
+
+<span class="comment"># Connect to hardware vault</span>
+vault = Vault(<span class="string">"avp+usb:///dev/ttyACM0"</span>)
+vault.authenticate(pin=<span class="string">"******"</span>)
+
+<span class="comment"># API key from secure hardware</span>
+api_key = vault.retrieve(<span class="string">"anthropic_api_key"</span>)
+
+<span class="comment"># Use with AI framework</span>
+llm = ChatAnthropic(api_key=api_key)
+response = llm.invoke(<span class="string">"Hello, Claude!"</span>)</code></pre>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Problem Section -->
+    <section class="section section-dark" id="problem">
+        <div class="container">
+            <h2 class="section-title">The Problem</h2>
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <div class="problem-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4M12 16h.01"/></svg>
+                    </div>
+                    <h3>Environment Variables</h3>
+                    <p>Leaked in logs, process dumps, and error messages. Visible to any process on the system.</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6M9 15l3 3 3-3"/></svg>
+                    </div>
+                    <h3>Config Files</h3>
+                    <p>Accidentally committed to git. Backed up to cloud. Readable by other users.</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    </div>
+                    <h3>Secret Managers</h3>
+                    <p>Still software-based. Single point of failure. Complex setup and maintenance.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section" id="features">
+        <div class="container">
+            <h2 class="section-title">The Solution</h2>
+            <p class="section-subtitle">AVP provides a unified interface for credential management across all security levels</p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon gradient-bg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <h3>Universal Protocol</h3>
+                    <p>One API for file-based, keychain, hardware, and remote backends. Switch backends without changing code.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon gradient-bg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <h3>Hardware Security</h3>
+                    <p>Optional hardware-backed storage with TROPIC01 secure element. Keys never leave the chip.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon gradient-bg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                    </div>
+                    <h3>Framework Agnostic</h3>
+                    <p>Works with LangChain, CrewAI, ZeroClaw, and any custom agent. Just import and use.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon gradient-bg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    </div>
+                    <h3>Open Standard</h3>
+                    <p>Apache 2.0 licensed. Community-driven. No vendor lock-in. Build your own implementation.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="section section-dark" id="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+
+            <div class="architecture">
+                <div class="arch-layer">
+                    <div class="arch-label">Your Agent</div>
+                    <div class="arch-box">LangChain / CrewAI / Custom Agent</div>
+                </div>
+                <div class="arch-arrow">↓ AVP Protocol</div>
+                <div class="arch-layer">
+                    <div class="arch-label">AVP Client</div>
+                    <div class="arch-box">vault.retrieve("api_key")</div>
+                </div>
+                <div class="arch-arrow">↓ JSON / MCP / gRPC</div>
+                <div class="arch-layer backends">
+                    <div class="arch-label">Backends</div>
+                    <div class="backend-grid">
+                        <div class="arch-box small">File</div>
+                        <div class="arch-box small">Keychain</div>
+                        <div class="arch-box small highlight">Hardware</div>
+                        <div class="arch-box small">Remote</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="operations-grid">
+                <div class="operation">
+                    <code>DISCOVER</code>
+                    <span>Query capabilities</span>
+                </div>
+                <div class="operation">
+                    <code>AUTHENTICATE</code>
+                    <span>Start session</span>
+                </div>
+                <div class="operation">
+                    <code>STORE</code>
+                    <span>Save secret</span>
+                </div>
+                <div class="operation">
+                    <code>RETRIEVE</code>
+                    <span>Get secret</span>
+                </div>
+                <div class="operation">
+                    <code>DELETE</code>
+                    <span>Remove secret</span>
+                </div>
+                <div class="operation">
+                    <code>LIST</code>
+                    <span>List secrets</span>
+                </div>
+                <div class="operation">
+                    <code>ROTATE</code>
+                    <span>Update secret</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Implementations Section -->
+    <section class="section" id="implementations">
+        <div class="container">
+            <h2 class="section-title">Implementations</h2>
+            <p class="section-subtitle">Official clients and framework integrations</p>
+
+            <div class="impl-grid">
+                <a href="https://github.com/avp-protocol/avp-py" class="impl-card">
+                    <div class="impl-icon">
+                        <img src="img/python.svg" alt="Python" width="48">
+                    </div>
+                    <h3>avp-py</h3>
+                    <p>Python client library</p>
+                    <code>pip install avp-py</code>
+                </a>
+                <a href="https://github.com/avp-protocol/avp-ts" class="impl-card">
+                    <div class="impl-icon">
+                        <img src="img/typescript.svg" alt="TypeScript" width="48">
+                    </div>
+                    <h3>avp-ts</h3>
+                    <p>TypeScript/Node.js client</p>
+                    <code>npm install @avp/client</code>
+                </a>
+                <a href="https://github.com/avp-protocol/avp-rs" class="impl-card">
+                    <div class="impl-icon">
+                        <img src="img/rust.svg" alt="Rust" width="48">
+                    </div>
+                    <h3>avp-rs</h3>
+                    <p>Rust client library</p>
+                    <code>cargo add avp-rs</code>
+                </a>
+                <a href="https://github.com/avp-protocol/avp-go" class="impl-card">
+                    <div class="impl-icon">
+                        <img src="img/go.svg" alt="Go" width="48">
+                    </div>
+                    <h3>avp-go</h3>
+                    <p>Go client library</p>
+                    <code>go get avp-protocol/avp-go</code>
+                </a>
+            </div>
+
+            <h3 class="subsection-title">Framework Integrations</h3>
+            <div class="framework-grid">
+                <a href="https://github.com/avp-protocol/langchain-avp" class="framework-card">
+                    <span class="framework-name">LangChain</span>
+                    <span class="framework-status ready">Ready</span>
+                </a>
+                <a href="https://github.com/avp-protocol/crewai-avp" class="framework-card">
+                    <span class="framework-name">CrewAI</span>
+                    <span class="framework-status ready">Ready</span>
+                </a>
+                <a href="https://github.com/avp-protocol/zeroclaw-avp" class="framework-card">
+                    <span class="framework-name">ZeroClaw</span>
+                    <span class="framework-status ready">Ready</span>
+                </a>
+                <a href="https://github.com/avp-protocol/openclaw-avp" class="framework-card">
+                    <span class="framework-name">OpenClaw</span>
+                    <span class="framework-status ready">Ready</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- NexusClaw Section -->
+    <section class="section section-gradient" id="nexusclaw">
+        <div class="container">
+            <div class="nexusclaw-content">
+                <div class="nexusclaw-info">
+                    <span class="badge">Coming March 2026</span>
+                    <h2>NexusClaw</h2>
+                    <p class="nexusclaw-tagline">Hardware Security Key for AI Agents</p>
+                    <p>The first USB security key designed specifically for AI agents. Store your API keys in tamper-resistant silicon with TROPIC01 secure element.</p>
+
+                    <ul class="nexusclaw-features">
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            128 secure storage slots
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Hardware-based signing
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            PIN protection with lockout
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Open source firmware
+                        </li>
+                    </ul>
+
+                    <a href="https://github.com/avp-protocol/nexusclaw" class="btn btn-light btn-large">
+                        View on GitHub
+                    </a>
+                </div>
+                <div class="nexusclaw-visual">
+                    <img src="assets/nexusclaw-device.svg" alt="NexusClaw Device" class="device-image">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section cta-section">
+        <div class="container">
+            <h2>Ready to Secure Your AI Agents?</h2>
+            <p>Start with the specification, pick your implementation, and protect your credentials today.</p>
+            <div class="cta-buttons">
+                <a href="https://github.com/avp-protocol/spec" class="btn btn-primary btn-large">Read the Specification</a>
+                <a href="https://github.com/avp-protocol" class="btn btn-outline btn-large">Browse Repositories</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <img src="assets/avp-logo.svg" alt="AVP Protocol" height="32">
+                    <p>Open standard for secure AI agent credential management.</p>
+                    <p class="copyright">&copy; 2025 AVP Protocol Contributors</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Protocol</h4>
+                    <ul>
+                        <li><a href="https://github.com/avp-protocol/spec">Specification</a></li>
+                        <li><a href="https://github.com/avp-protocol/spec/blob/main/spec/avp-spec-v0.1.0.md">v0.1.0 Spec</a></li>
+                        <li><a href="https://github.com/avp-protocol/spec/blob/main/LICENSE">License (Apache 2.0)</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Implementations</h4>
+                    <ul>
+                        <li><a href="https://github.com/avp-protocol/avp-py">Python</a></li>
+                        <li><a href="https://github.com/avp-protocol/avp-ts">TypeScript</a></li>
+                        <li><a href="https://github.com/avp-protocol/avp-rs">Rust</a></li>
+                        <li><a href="https://github.com/avp-protocol/avp-go">Go</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Hardware</h4>
+                    <ul>
+                        <li><a href="https://github.com/avp-protocol/nexusclaw">NexusClaw</a></li>
+                        <li><a href="https://github.com/avp-protocol/avp-tropic">AVP-Tropic</a></li>
+                        <li><a href="https://github.com/avp-protocol/avp-hardware">Hardware Docs</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="https://github.com/avp-protocol">GitHub</a></li>
+                        <li><a href="https://github.com/avp-protocol/.github/blob/main/CONTRIBUTING.md">Contributing</a></li>
+                        <li><a href="https://github.com/avp-protocol/spec/issues">Issues</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

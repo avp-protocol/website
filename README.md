@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/avp-protocol/spec/main/assets/avp-shield.svg" alt="AVP Shield" width="80" />
+  <img src="assets/avp-icon.svg" alt="AVP" width="80" />
 </p>
 
-<h1 align="center">AVP Website</h1>
+<h1 align="center">AVP Protocol Website</h1>
 
 <p align="center">
-  <strong>Documentation website for Agent Vault Protocol</strong><br>
-  avp.dev (coming soon)
+  <strong>Official website for Agent Vault Protocol</strong><br>
+  <a href="https://avp-protocol.github.io/website">avp-protocol.github.io/website</a>
 </p>
 
 <p align="center">
@@ -18,112 +18,59 @@
 
 ## Overview
 
-This repository contains the source code for the AVP documentation website. It provides:
+Static website for the Agent Vault Protocol ecosystem. Features:
 
-- Protocol specification (rendered from markdown)
-- Getting started guides
-- Implementation tutorials
-- API reference documentation
-- Integration guides
+- Protocol overview and features
+- Implementation showcase (Python, TypeScript, Rust, Go)
+- Framework integrations (LangChain, CrewAI, ZeroClaw)
+- NexusClaw hardware product announcement
 
-## Tech Stack
-
-- **Framework**: [Astro](https://astro.build/) with [Starlight](https://starlight.astro.build/)
-- **Styling**: Tailwind CSS
-- **Hosting**: GitHub Pages / Cloudflare Pages
-- **Search**: Pagefind
-
-## Development
-
-### Prerequisites
-
-- Node.js 18+
-- pnpm (recommended) or npm
-
-### Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/avp-protocol/website.git
-cd website
-
-# Install dependencies
-pnpm install
-
-# Start development server
-pnpm dev
-```
-
-### Build
-
-```bash
-pnpm build
-```
-
-### Preview production build
-
-```bash
-pnpm preview
-```
-
-## Project Structure
+## Structure
 
 ```
 website/
-├── src/
-│   ├── content/
-│   │   ├── docs/
-│   │   │   ├── getting-started/
-│   │   │   ├── specification/
-│   │   │   ├── implementations/
-│   │   │   ├── integrations/
-│   │   │   └── reference/
-│   │   └── config.ts
-│   ├── components/
-│   ├── layouts/
-│   └── pages/
-├── public/
-│   ├── assets/
-│   └── favicon.svg
-├── astro.config.mjs
-└── package.json
+├── index.html          # Main landing page
+├── css/
+│   └── style.css       # Styles
+├── js/
+│   └── main.js         # JavaScript
+├── assets/
+│   ├── avp-logo.svg    # Logo
+│   ├── avp-icon.svg    # Favicon
+│   └── nexusclaw-device.svg
+├── img/
+│   ├── python.svg      # Language icons
+│   ├── typescript.svg
+│   ├── rust.svg
+│   └── go.svg
+└── .github/
+    └── workflows/
+        └── deploy.yml  # GitHub Pages deployment
 ```
 
-## Content Structure
+## Development
 
-| Section | Description |
-|---------|-------------|
-| `/getting-started` | Quick start, installation, migration guides |
-| `/specification` | Full protocol spec, rendered from source |
-| `/implementations` | Language-specific implementation guides |
-| `/integrations` | Framework integration tutorials |
-| `/reference` | API reference, error codes, configuration |
-
-## Contributing
-
-### Adding Documentation
-
-1. Create a new `.md` or `.mdx` file in the appropriate `src/content/docs/` subdirectory
-2. Add frontmatter with title and description
-3. Write content using MDX (Markdown + JSX)
-4. Submit a PR
-
-### Syncing Specification
-
-The specification is synced from the [spec repo](https://github.com/avp-protocol/spec):
+Simply open `index.html` in a browser, or use a local server:
 
 ```bash
-pnpm sync-spec
-```
+# Python
+python -m http.server 8000
 
-This fetches the latest `avp-spec-v*.md` and converts it to the website format.
+# Node.js
+npx serve .
+```
 
 ## Deployment
 
-The website is automatically deployed on push to `main`:
+The website automatically deploys to GitHub Pages on push to `main`.
 
-- **GitHub Pages**: https://avp-protocol.github.io/website
-- **Custom domain**: https://avp.dev (when configured)
+**Live URL:** https://avp-protocol.github.io/website
+
+## Adding Pages
+
+1. Create new `.html` file
+2. Link from `index.html`
+3. Push to `main`
 
 ## License
 
@@ -133,5 +80,5 @@ Apache 2.0 — see [LICENSE](LICENSE).
 
 <p align="center">
   <a href="https://github.com/avp-protocol/spec">Specification</a> ·
-  <a href="https://github.com/avp-protocol/website/issues">Issues</a>
+  <a href="https://github.com/avp-protocol">GitHub</a>
 </p>
