@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - Agent Vault Protocol</title>
+    <link rel="icon" href="../assets/avp-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .docs-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .doc-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .doc-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 212, 170, 0.15);
+            border-color: var(--accent);
+        }
+        .doc-card h3 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .doc-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+        .doc-card a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .doc-card a:hover {
+            text-decoration: underline;
+        }
+        .doc-icon {
+            width: 24px;
+            height: 24px;
+        }
+        .section-title {
+            color: var(--text-primary);
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 2rem;
+        }
+        .back-link:hover {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="docs-container">
+        <a href="../index.html" class="back-link">← Back to Home</a>
+
+        <div class="docs-header">
+            <img src="../assets/avp-icon.svg" alt="AVP" width="60">
+            <h1>AVP Documentation</h1>
+            <p>Complete guides and API references for Agent Vault Protocol</p>
+        </div>
+
+        <h2 class="section-title">Getting Started</h2>
+        <div class="docs-grid">
+            <div class="doc-card">
+                <h3>🚀 Quick Start</h3>
+                <p>Get up and running with AVP in under 5 minutes. Install, configure, and store your first credential.</p>
+                <a href="getting-started.html">Read Guide →</a>
+            </div>
+            <div class="doc-card">
+                <h3>📖 Core Concepts</h3>
+                <p>Understand workspaces, sessions, backends, and the 7 AVP operations.</p>
+                <a href="concepts.html">Learn More →</a>
+            </div>
+            <div class="doc-card">
+                <h3>🔐 Security Model</h3>
+                <p>How AVP protects your credentials with encryption, isolation, and hardware security.</p>
+                <a href="security.html">Learn More →</a>
+            </div>
+        </div>
+
+        <h2 class="section-title">SDK Documentation</h2>
+        <div class="docs-grid">
+            <div class="doc-card">
+                <h3><img src="../img/python.svg" class="doc-icon" alt="Python"> Python SDK</h3>
+                <p>Full-featured Python implementation with file, memory, and keychain backends.</p>
+                <a href="python.html">View Docs →</a>
+            </div>
+            <div class="doc-card">
+                <h3><img src="../img/typescript.svg" class="doc-icon" alt="TypeScript"> TypeScript SDK</h3>
+                <p>Modern async/await API for Node.js and browser environments.</p>
+                <a href="typescript.html">View Docs →</a>
+            </div>
+            <div class="doc-card">
+                <h3><img src="../img/rust.svg" class="doc-icon" alt="Rust"> Rust SDK</h3>
+                <p>Zero-copy, memory-safe implementation for high-performance applications.</p>
+                <a href="rust.html">View Docs →</a>
+            </div>
+            <div class="doc-card">
+                <h3><img src="../img/go.svg" class="doc-icon" alt="Go"> Go SDK</h3>
+                <p>Idiomatic Go package with context support and concurrent-safe operations.</p>
+                <a href="go.html">View Docs →</a>
+            </div>
+        </div>
+
+        <h2 class="section-title">CLI & Tools</h2>
+        <div class="docs-grid">
+            <div class="doc-card">
+                <h3>💻 CLI Reference</h3>
+                <p>Command-line interface for managing credentials across all backends.</p>
+                <a href="cli.html">View Reference →</a>
+            </div>
+            <div class="doc-card">
+                <h3>🔄 Migration Guide</h3>
+                <p>Upgrade from file to keychain to hardware security step-by-step.</p>
+                <a href="migration.html">Read Guide →</a>
+            </div>
+        </div>
+
+        <h2 class="section-title">Framework Integrations</h2>
+        <div class="docs-grid">
+            <div class="doc-card">
+                <h3>🦜 LangChain</h3>
+                <p>Drop-in credential provider for LangChain agents and chains.</p>
+                <a href="langchain.html">View Integration →</a>
+            </div>
+            <div class="doc-card">
+                <h3>🚢 CrewAI</h3>
+                <p>Per-agent credential isolation for CrewAI multi-agent systems.</p>
+                <a href="crewai.html">View Integration →</a>
+            </div>
+            <div class="doc-card">
+                <h3>🔓 OpenClaw</h3>
+                <p>Secure replacement for keys.json in OpenClaw agents.</p>
+                <a href="openclaw.html">View Integration →</a>
+            </div>
+        </div>
+
+        <h2 class="section-title">Advanced Topics</h2>
+        <div class="docs-grid">
+            <div class="doc-card">
+                <h3>🔧 Custom Backends</h3>
+                <p>Build your own backend for specialized storage requirements.</p>
+                <a href="custom-backends.html">Read Guide →</a>
+            </div>
+            <div class="doc-card">
+                <h3>📋 Protocol Specification</h3>
+                <p>Complete AVP v0.1.0 protocol specification.</p>
+                <a href="https://github.com/avp-protocol/spec">View Spec →</a>
+            </div>
+        </div>
+
+        <footer style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <p style="color: var(--text-secondary);">
+                <a href="https://github.com/avp-protocol" style="color: var(--accent);">GitHub</a> ·
+                <a href="https://github.com/avp-protocol/spec" style="color: var(--accent);">Specification</a> ·
+                Apache 2.0 License
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

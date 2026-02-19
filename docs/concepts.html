@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Concepts - AVP Documentation</title>
+    <link rel="icon" href="../assets/avp-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; margin-bottom: 2rem; }
+        .back-link:hover { color: var(--accent); }
+        h1 { color: var(--text-primary); margin-bottom: 0.5rem; }
+        h2 { color: var(--accent); margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { color: var(--text-primary); margin-top: 1.5rem; }
+        p, li { color: var(--text-secondary); line-height: 1.7; }
+        pre { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+        code { font-family: 'Fira Code', 'SF Mono', Monaco, monospace; font-size: 0.9rem; color: var(--accent); }
+        pre code { color: var(--text-primary); }
+        .concept { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+        .concept h3 { margin-top: 0; color: var(--accent); }
+        .diagram { background: var(--bg-primary); border: 2px dashed var(--border); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; font-family: monospace; font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); }
+        .op-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .op-table th, .op-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+        .op-table th { color: var(--text-primary); }
+        .op-table td { color: var(--text-secondary); }
+        .op-table code { color: var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="docs-container">
+        <a href="index.html" class="back-link">← Back to Docs</a>
+
+        <h1>📖 Core Concepts</h1>
+        <p>Understanding the fundamental concepts of Agent Vault Protocol</p>
+
+        <h2>Architecture Overview</h2>
+        <div class="diagram">
+┌─────────────────────────────────────────────────────────────┐
+│                        AI Agent                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
+│  │  LangChain  │  │   CrewAI    │  │  OpenClaw   │   ...    │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘          │
+│         │                │                │                  │
+│         └────────────────┼────────────────┘                  │
+│                          ▼                                   │
+│                 ┌─────────────────┐                          │
+│                 │   AVP Client    │                          │
+│                 └────────┬────────┘                          │
+└──────────────────────────┼──────────────────────────────────┘
+                           │ 7 Operations
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                       Backend                                │
+│  ┌────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐        │
+│  │ Memory │  │   File   │  │ Keychain │  │Hardware│        │
+│  │(tests) │  │(AES-256) │  │  (OS)    │  │(HSM)   │        │
+│  └────────┘  └──────────┘  └──────────┘  └────────┘        │
+└─────────────────────────────────────────────────────────────┘
+        </div>
+
+        <div class="concept">
+            <h3>🔐 Secrets</h3>
+            <p>A <strong>Secret</strong> is any sensitive value that an AI agent needs to operate: API keys, passwords, tokens, certificates, etc.</p>
+            <p>Each secret has:</p>
+            <ul>
+                <li><strong>Name</strong> - Unique identifier (e.g., <code>openai_api_key</code>)</li>
+                <li><strong>Value</strong> - The sensitive data (stored encrypted)</li>
+                <li><strong>Version</strong> - Incremented on each update for tracking</li>
+                <li><strong>Labels</strong> - Key-value metadata for filtering</li>
+                <li><strong>Expiration</strong> - Optional TTL for automatic cleanup</li>
+            </ul>
+        </div>
+
+        <div class="concept">
+            <h3>📁 Workspaces</h3>
+            <p>A <strong>Workspace</strong> is an isolation boundary for secrets. Secrets in one workspace cannot be accessed from another.</p>
+<pre><code># Production agent only sees production secrets
+prod_session = client.authenticate(workspace="production")
+client.retrieve(prod_session.session_id, "api_key")  # ✓ Works
+
+# Development agent only sees dev secrets
+dev_session = client.authenticate(workspace="development")
+client.retrieve(dev_session.session_id, "api_key")  # Different key</code></pre>
+            <p><strong>Use cases:</strong></p>
+            <ul>
+                <li>Environment separation (dev/staging/prod)</li>
+                <li>Multi-tenant applications</li>
+                <li>Per-agent credential isolation in CrewAI</li>
+            </ul>
+        </div>
+
+        <div class="concept">
+            <h3>🎫 Sessions</h3>
+            <p>A <strong>Session</strong> is an authenticated context for performing operations. Sessions:</p>
+            <ul>
+                <li>Are bound to a single workspace</li>
+                <li>Have a time-to-live (TTL) after which they expire</li>
+                <li>Can be explicitly terminated for security</li>
+            </ul>
+<pre><code># Create a session (1 hour TTL)
+session = client.authenticate(
+    workspace="my-agent",
+    ttl_seconds=3600
+)
+
+# Use the session for operations
+client.store(session.session_id, "key", b"value")
+client.retrieve(session.session_id, "key")
+
+# Sessions expire automatically, or can be terminated
+# client.terminate(session.session_id)  # Future feature</code></pre>
+        </div>
+
+        <div class="concept">
+            <h3>🗄️ Backends</h3>
+            <p>A <strong>Backend</strong> is the storage layer for secrets. AVP supports multiple backends with different security properties:</p>
+            <table class="op-table">
+                <thead>
+                    <tr>
+                        <th>Backend</th>
+                        <th>Security</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>memory</code></td>
+                        <td>None</td>
+                        <td>In-memory only, for testing</td>
+                    </tr>
+                    <tr>
+                        <td><code>file</code></td>
+                        <td>AES-256</td>
+                        <td>Encrypted file on disk</td>
+                    </tr>
+                    <tr>
+                        <td><code>keychain</code></td>
+                        <td>OS-protected</td>
+                        <td>macOS Keychain, Windows Credential Manager, Linux SecretService</td>
+                    </tr>
+                    <tr>
+                        <td><code>hardware</code></td>
+                        <td>FIPS 140-3</td>
+                        <td>Hardware Security Module (NexusClaw)</td>
+                    </tr>
+                    <tr>
+                        <td><code>remote</code></td>
+                        <td>Varies</td>
+                        <td>Network vault (HashiCorp Vault, AWS Secrets Manager)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>The 7 Operations</h2>
+        <p>AVP defines exactly 7 operations for interacting with the vault:</p>
+
+        <table class="op-table">
+            <thead>
+                <tr>
+                    <th>Operation</th>
+                    <th>Description</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>DISCOVER</code></td>
+                    <td>Query vault capabilities and backends</td>
+                    <td><code>client.discover()</code></td>
+                </tr>
+                <tr>
+                    <td><code>AUTHENTICATE</code></td>
+                    <td>Create a session for a workspace</td>
+                    <td><code>client.authenticate("workspace")</code></td>
+                </tr>
+                <tr>
+                    <td><code>STORE</code></td>
+                    <td>Create or update a secret</td>
+                    <td><code>client.store(sid, "key", value)</code></td>
+                </tr>
+                <tr>
+                    <td><code>RETRIEVE</code></td>
+                    <td>Get a secret value</td>
+                    <td><code>client.retrieve(sid, "key")</code></td>
+                </tr>
+                <tr>
+                    <td><code>DELETE</code></td>
+                    <td>Remove a secret</td>
+                    <td><code>client.delete(sid, "key")</code></td>
+                </tr>
+                <tr>
+                    <td><code>LIST</code></td>
+                    <td>Enumerate secrets (names only)</td>
+                    <td><code>client.list_secrets(sid)</code></td>
+                </tr>
+                <tr>
+                    <td><code>ROTATE</code></td>
+                    <td>Update with version tracking</td>
+                    <td><code>client.rotate(sid, "key", new_val)</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Security Properties</h2>
+
+        <div class="concept">
+            <h3>🔒 Encryption at Rest</h3>
+            <p>All backends (except memory) encrypt secrets before storage:</p>
+            <ul>
+                <li><strong>File:</strong> Fernet (AES-128-CBC + HMAC-SHA256)</li>
+                <li><strong>Keychain:</strong> OS-provided encryption (TPM-backed on modern systems)</li>
+                <li><strong>Hardware:</strong> HSM-internal encryption (keys never leave the device)</li>
+            </ul>
+        </div>
+
+        <div class="concept">
+            <h3>🛡️ Memory Protection</h3>
+            <p>Secrets are handled carefully in memory:</p>
+            <ul>
+                <li>Minimized time in plaintext</li>
+                <li>Overwritten before deallocation (where language allows)</li>
+                <li>Never logged or written to temp files</li>
+            </ul>
+        </div>
+
+        <div class="concept">
+            <h3>🔑 Key Derivation</h3>
+            <p>For password-based backends, keys are derived using PBKDF2:</p>
+            <ul>
+                <li>480,000 iterations (OWASP recommendation)</li>
+                <li>SHA-256 hash function</li>
+                <li>Unique salt per vault</li>
+            </ul>
+        </div>
+
+        <h2>Next Steps</h2>
+        <ul>
+            <li><a href="getting-started.html" style="color: var(--accent);">Getting Started</a> - Install and use AVP</li>
+            <li><a href="python.html" style="color: var(--accent);">Python SDK</a> - Full API reference</li>
+            <li><a href="security.html" style="color: var(--accent);">Security Model</a> - Deep dive into security</li>
+        </ul>
+
+        <footer style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <p style="color: var(--text-secondary);">
+                <a href="https://github.com/avp-protocol/spec" style="color: var(--accent);">Full Specification</a> ·
+                <a href="https://github.com/avp-protocol" style="color: var(--accent);">GitHub</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

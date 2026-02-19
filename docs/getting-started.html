@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - AVP Documentation</title>
+    <link rel="icon" href="../assets/avp-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 2rem;
+        }
+        .back-link:hover { color: var(--accent); }
+        h1 { color: var(--text-primary); margin-bottom: 0.5rem; }
+        h2 { color: var(--accent); margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { color: var(--text-primary); margin-top: 1.5rem; }
+        p, li { color: var(--text-secondary); line-height: 1.7; }
+        pre {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        code {
+            font-family: 'Fira Code', 'SF Mono', Monaco, monospace;
+            font-size: 0.9rem;
+            color: var(--accent);
+        }
+        pre code { color: var(--text-primary); }
+        .highlight { background: rgba(0, 212, 170, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; }
+        .note {
+            background: rgba(0, 212, 170, 0.1);
+            border-left: 3px solid var(--accent);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .tab-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: -1px;
+        }
+        .tab {
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .tab.active {
+            background: var(--bg-primary);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+        .tab-content {
+            display: none;
+            border: 1px solid var(--border);
+            border-radius: 0 8px 8px 8px;
+            padding: 1rem;
+        }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="docs-container">
+        <a href="index.html" class="back-link">← Back to Docs</a>
+
+        <h1>🚀 Getting Started with AVP</h1>
+        <p>Get up and running with Agent Vault Protocol in under 5 minutes.</p>
+
+        <h2>Installation</h2>
+
+        <div class="tab-group">
+            <div class="tab active" onclick="showTab('python')">Python</div>
+            <div class="tab" onclick="showTab('typescript')">TypeScript</div>
+            <div class="tab" onclick="showTab('rust')">Rust</div>
+            <div class="tab" onclick="showTab('go')">Go</div>
+        </div>
+
+        <div id="python" class="tab-content active">
+<pre><code># Install the SDK
+pip install avp-sdk
+
+# With keychain support (macOS/Linux/Windows)
+pip install avp-sdk[keychain]
+
+# Install CLI tool
+pip install avp-cli</code></pre>
+        </div>
+
+        <div id="typescript" class="tab-content">
+<pre><code># Install the SDK
+npm install avp-ts-sdk
+
+# With keychain support
+npm install avp-ts-sdk keytar</code></pre>
+        </div>
+
+        <div id="rust" class="tab-content">
+<pre><code># Add to Cargo.toml
+[dependencies]
+avp = "0.1"</code></pre>
+        </div>
+
+        <div id="go" class="tab-content">
+<pre><code># Install the SDK
+go get github.com/avp-protocol/avp-go</code></pre>
+        </div>
+
+        <h2>Quick Start</h2>
+
+        <h3>1. Store a Credential</h3>
+<pre><code>from avp import AVPClient
+from avp.backends import FileBackend
+
+# Create a file-based vault (encrypted with your password)
+backend = FileBackend("~/.avp/vault.enc", "your-secure-password")
+client = AVPClient(backend)
+
+# Authenticate to a workspace
+session = client.authenticate(workspace="my-agent")
+
+# Store an API key
+client.store(session.session_id, "openai_api_key", b"sk-...")
+print("✓ Credential stored!")</code></pre>
+
+        <h3>2. Retrieve a Credential</h3>
+<pre><code># Retrieve the credential
+result = client.retrieve(session.session_id, "openai_api_key")
+api_key = result.value.decode()
+
+# Use it in your agent
+from openai import OpenAI
+client = OpenAI(api_key=api_key)</code></pre>
+
+        <h3>3. List All Credentials</h3>
+<pre><code># List all stored credentials
+secrets = client.list_secrets(session.session_id)
+for secret in secrets.secrets:
+    print(f"  - {secret.name} (v{secret.metadata.version})")</code></pre>
+
+        <h2>Using the CLI</h2>
+
+<pre><code># Initialize a new vault
+avp init
+
+# Store a credential
+avp store anthropic_api_key "sk-ant-..."
+
+# Retrieve a credential
+avp get anthropic_api_key
+
+# List all credentials
+avp list
+
+# Rotate a credential
+avp rotate anthropic_api_key "sk-ant-new-..."</code></pre>
+
+        <div class="note">
+            <strong>💡 Tip:</strong> Use <code>avp get mykey --quiet</code> to output only the value, perfect for scripts:
+            <code>export API_KEY=$(avp get mykey -q)</code>
+        </div>
+
+        <h2>Backend Options</h2>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border);">
+                    <th style="text-align: left; padding: 0.5rem; color: var(--text-primary);">Backend</th>
+                    <th style="text-align: left; padding: 0.5rem; color: var(--text-primary);">Security Level</th>
+                    <th style="text-align: left; padding: 0.5rem; color: var(--text-primary);">Best For</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem; color: var(--accent);">Memory</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);">Testing only</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);">Unit tests, development</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem; color: var(--accent);">File</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);">Good (AES-256)</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);">Personal projects, CI/CD</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem; color: var(--accent);">Keychain</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);">Better (OS-protected)</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);">Production apps, multi-user</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.5rem; color: var(--accent);">Hardware</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);">Best (FIPS 140-3)</td>
+                    <td style="padding: 0.5rem; color: var(--text-secondary);">Enterprise, regulated industries</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Next Steps</h2>
+        <ul>
+            <li><a href="concepts.html" style="color: var(--accent);">Understand core concepts</a> - Workspaces, sessions, and operations</li>
+            <li><a href="python.html" style="color: var(--accent);">Python SDK reference</a> - Full API documentation</li>
+            <li><a href="langchain.html" style="color: var(--accent);">LangChain integration</a> - Use AVP with LangChain agents</li>
+            <li><a href="migration.html" style="color: var(--accent);">Migration guide</a> - Upgrade your security level</li>
+        </ul>
+
+        <footer style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <p style="color: var(--text-secondary);">
+                <a href="https://github.com/avp-protocol" style="color: var(--accent);">GitHub</a> ·
+                <a href="https://github.com/avp-protocol/spec" style="color: var(--accent);">Specification</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        function showTab(id) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LangChain Integration - AVP Documentation</title>
+    <link rel="icon" href="../assets/avp-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; margin-bottom: 2rem; }
+        .back-link:hover { color: var(--accent); }
+        h1 { color: var(--text-primary); margin-bottom: 0.5rem; }
+        h2 { color: var(--accent); margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { color: var(--text-primary); margin-top: 1.5rem; }
+        p, li { color: var(--text-secondary); line-height: 1.7; }
+        pre { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+        code { font-family: 'Fira Code', 'SF Mono', Monaco, monospace; font-size: 0.9rem; color: var(--accent); }
+        pre code { color: var(--text-primary); }
+        .feature { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        .feature h4 { color: var(--accent); margin: 0 0 0.5rem 0; }
+        .note { background: rgba(0, 212, 170, 0.1); border-left: 3px solid var(--accent); padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+    </style>
+</head>
+<body>
+    <div class="docs-container">
+        <a href="index.html" class="back-link">← Back to Docs</a>
+
+        <h1>🦜 LangChain Integration</h1>
+        <p>Secure credential management for LangChain agents and chains</p>
+
+        <h2>Installation</h2>
+<pre><code>pip install langchain-avp</code></pre>
+
+        <h2>Quick Start</h2>
+<pre><code>from langchain_avp import AVPCredentialProvider
+from langchain_openai import ChatOpenAI
+
+# Create credential provider with file backend
+provider = AVPCredentialProvider(
+    vault_path="~/.avp/vault.enc",
+    password="your-password"
+)
+
+# Store your API key once
+provider.set_credential("OPENAI_API_KEY", "sk-...")
+
+# Create LLM with credentials from AVP
+llm = ChatOpenAI(
+    api_key=provider.get_credential("OPENAI_API_KEY")
+)
+
+# Use the LLM
+response = llm.invoke("Hello, world!")
+print(response.content)</code></pre>
+
+        <h2>Features</h2>
+
+        <div class="feature">
+            <h4>🔐 Encrypted Storage</h4>
+            <p>API keys are encrypted at rest using AES-256, not stored in plaintext config files.</p>
+        </div>
+
+        <div class="feature">
+            <h4>🏷️ Workspace Isolation</h4>
+            <p>Separate credentials by project, environment, or agent to prevent cross-contamination.</p>
+        </div>
+
+        <div class="feature">
+            <h4>📝 Audit Callbacks</h4>
+            <p>Track every credential access with built-in LangChain callbacks.</p>
+        </div>
+
+        <div class="feature">
+            <h4>🔄 Credential Rotation</h4>
+            <p>Rotate API keys without redeploying your agents.</p>
+        </div>
+
+        <h2>AVPCredentialProvider</h2>
+        <p>Drop-in credential provider for LangChain.</p>
+
+<pre><code>from langchain_avp import AVPCredentialProvider, Backend
+
+# File backend (default)
+provider = AVPCredentialProvider(
+    vault_path="~/.avp/vault.enc",
+    password="your-password",
+    workspace="langchain-agent"
+)
+
+# Memory backend (for testing)
+provider = AVPCredentialProvider(backend=Backend.MEMORY)
+
+# Keychain backend (most secure without hardware)
+provider = AVPCredentialProvider(backend=Backend.KEYCHAIN)</code></pre>
+
+        <h3>Methods</h3>
+<pre><code># Store credentials
+provider.set_credential("OPENAI_API_KEY", "sk-...")
+provider.set_credential("ANTHROPIC_API_KEY", "sk-ant-...")
+
+# Retrieve credentials
+api_key = provider.get_credential("OPENAI_API_KEY")
+
+# Check if credential exists
+if provider.has_credential("OPENAI_API_KEY"):
+    print("Key is configured")
+
+# List all credentials
+keys = provider.list_credentials()
+
+# Delete credential
+provider.delete_credential("OLD_API_KEY")
+
+# Rotate credential
+provider.rotate_credential("OPENAI_API_KEY", "sk-new-...")</code></pre>
+
+        <h2>Audit Callback</h2>
+        <p>Track credential access in your LangChain runs.</p>
+
+<pre><code>from langchain_avp import AVPCredentialCallback
+from langchain.callbacks.manager import CallbackManager
+
+# Create callback
+avp_callback = AVPCredentialCallback(provider)
+
+# Add to your chain/agent
+callback_manager = CallbackManager([avp_callback])
+
+# Use with LLM
+llm = ChatOpenAI(
+    api_key=provider.get_credential("OPENAI_API_KEY"),
+    callbacks=callback_manager
+)
+
+# The callback logs every credential access:
+# [AVP Audit] Retrieved: OPENAI_API_KEY (workspace: langchain-agent)</code></pre>
+
+        <h2>Helper Functions</h2>
+
+        <h3>get_llm_with_avp</h3>
+        <p>Quick setup for common LLM providers.</p>
+
+<pre><code>from langchain_avp import get_llm_with_avp
+
+# OpenAI
+llm = get_llm_with_avp(
+    provider,
+    provider_type="openai",
+    model="gpt-4"
+)
+
+# Anthropic
+llm = get_llm_with_avp(
+    provider,
+    provider_type="anthropic",
+    model="claude-3-opus-20240229"
+)</code></pre>
+
+        <h3>load_credentials</h3>
+        <p>Load multiple credentials at once.</p>
+
+<pre><code>from langchain_avp import load_credentials
+
+# Load into environment
+load_credentials(provider, ["OPENAI_API_KEY", "SERPAPI_API_KEY"])
+
+# Now accessible via os.environ
+import os
+print(os.environ["OPENAI_API_KEY"])</code></pre>
+
+        <h2>Complete Example</h2>
+<pre><code>"""LangChain agent with AVP credential management."""
+
+from langchain_avp import AVPCredentialProvider, AVPCredentialCallback
+from langchain_openai import ChatOpenAI
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain.tools import DuckDuckGoSearchRun
+from langchain import hub
+
+# Setup credential provider
+provider = AVPCredentialProvider(
+    vault_path="~/.avp/vault.enc",
+    password="your-password",
+    workspace="search-agent"
+)
+
+# Store API key (do this once)
+# provider.set_credential("OPENAI_API_KEY", "sk-...")
+
+# Create LLM with AVP credentials
+llm = ChatOpenAI(
+    api_key=provider.get_credential("OPENAI_API_KEY"),
+    model="gpt-4",
+    callbacks=[AVPCredentialCallback(provider)]
+)
+
+# Setup agent
+tools = [DuckDuckGoSearchRun()]
+prompt = hub.pull("hwchase17/react")
+agent = create_react_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools)
+
+# Run agent
+result = agent_executor.invoke({
+    "input": "What's the latest news about AI safety?"
+})
+print(result["output"])
+
+# Clean up
+provider.close()</code></pre>
+
+        <div class="note">
+            <strong>💡 Migration from .env files:</strong><br>
+            Moving from <code>.env</code> to AVP? Use the CLI:
+            <code>avp import .env --format dotenv --workspace langchain</code>
+        </div>
+
+        <footer style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <p style="color: var(--text-secondary);">
+                <a href="https://github.com/avp-protocol/langchain-avp" style="color: var(--accent);">View on GitHub</a> ·
+                <a href="https://python.langchain.com/" style="color: var(--accent);">LangChain Docs</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
