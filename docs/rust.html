@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust SDK - AVP Documentation</title>
+    <link rel="icon" href="../assets/avp-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; margin-bottom: 2rem; }
+        .back-link:hover { color: var(--accent); }
+        h1 { color: var(--text-primary); margin-bottom: 0.5rem; }
+        h2 { color: var(--accent); margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { color: var(--text-primary); margin-top: 1.5rem; }
+        p, li { color: var(--text-secondary); line-height: 1.7; }
+        pre { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+        code { font-family: 'Fira Code', 'SF Mono', Monaco, monospace; font-size: 0.9rem; color: var(--accent); }
+        pre code { color: var(--text-primary); }
+        .api-section { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+        .api-section h3 { margin-top: 0; color: var(--accent); }
+        .note { background: rgba(0, 212, 170, 0.1); border-left: 3px solid var(--accent); padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .feature { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+        .feature h4 { color: var(--accent); margin: 0 0 0.5rem 0; font-size: 0.95rem; }
+        .feature p { margin: 0; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="docs-container">
+        <a href="index.html" class="back-link">← Back to Docs</a>
+
+        <h1><img src="../img/rust.svg" alt="Rust" style="height: 32px; vertical-align: middle;"> Rust SDK</h1>
+        <p>Zero-copy, memory-safe AVP implementation for high-performance applications</p>
+
+        <div class="feature-grid">
+            <div class="feature">
+                <h4>Zero-Copy</h4>
+                <p>Efficient secret handling without unnecessary allocations</p>
+            </div>
+            <div class="feature">
+                <h4>Memory Safe</h4>
+                <p>Secrets are securely zeroed on drop with zeroize</p>
+            </div>
+            <div class="feature">
+                <h4>Async/Await</h4>
+                <p>Full async support with tokio runtime</p>
+            </div>
+            <div class="feature">
+                <h4>Type Safe</h4>
+                <p>Strong typing prevents credential misuse</p>
+            </div>
+        </div>
+
+        <h2>Installation</h2>
+<pre><code># Cargo.toml
+[dependencies]
+avp = "0.1"
+
+# With all backends
+avp = { version = "0.1", features = ["file", "keychain"] }
+
+# Async support
+avp = { version = "0.1", features = ["async"] }</code></pre>
+
+        <h2>Quick Start</h2>
+<pre><code>use avp::{Client, FileBackend, Result};
+
+fn main() -> Result<()> {
+    // Create client with file backend
+    let backend = FileBackend::new("./vault.enc", "your-password")?;
+    let client = Client::new(backend);
+
+    // Authenticate to workspace
+    let session = client.authenticate("my-agent", None)?;
+
+    // Store a secret
+    client.store(
+        &session,
+        "OPENAI_API_KEY",
+        b"sk-...",
+        Default::default()
+    )?;
+
+    // Retrieve a secret
+    let secret = client.retrieve(&session, "OPENAI_API_KEY", None)?;
+    println!("Key: {}", String::from_utf8_lossy(&secret.value));
+
+    Ok(())
+}</code></pre>
+
+        <h2>Async Usage</h2>
+<pre><code>use avp::{AsyncClient, FileBackend, Result};
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let backend = FileBackend::new("./vault.enc", "password")?;
+    let client = AsyncClient::new(backend);
+
+    let session = client.authenticate("workspace", None).await?;
+
+    client.store(&session, "KEY", b"value", Default::default()).await?;
+
+    let secret = client.retrieve(&session, "KEY", None).await?;
+
+    Ok(())
+}</code></pre>
+
+        <h2>Backends</h2>
+
+        <div class="api-section">
+            <h3>MemoryBackend</h3>
+            <p>In-memory storage for testing.</p>
+<pre><code>use avp::{Client, MemoryBackend};
+
+let backend = MemoryBackend::new();
+let client = Client::new(backend);</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>FileBackend</h3>
+            <p>Encrypted file storage using AES-256-GCM with Argon2id key derivation.</p>
+<pre><code>use avp::FileBackend;
+
+// Create with password
+let backend = FileBackend::new("./vault.enc", "password")?;
+
+// Create with custom options
+let backend = FileBackend::builder()
+    .path("./vault.enc")
+    .password("password")
+    .argon2_memory_cost(65536)
+    .argon2_time_cost(3)
+    .build()?;</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>KeychainBackend</h3>
+            <p>OS-native credential storage (requires <code>keychain</code> feature).</p>
+<pre><code>use avp::KeychainBackend;
+
+let backend = KeychainBackend::new("my-app-avp")?;</code></pre>
+        </div>
+
+        <h2>Operations</h2>
+
+        <div class="api-section">
+            <h3>discover()</h3>
+<pre><code>let info = client.discover()?;
+
+println!("Version: {}", info.version);
+println!("Backends: {:?}", info.backends);
+println!("Operations: {:?}", info.operations);</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>authenticate()</h3>
+<pre><code>use std::time::Duration;
+
+// Default TTL (1 hour)
+let session = client.authenticate("workspace", None)?;
+
+// Custom TTL
+let session = client.authenticate(
+    "workspace",
+    Some(Duration::from_secs(7200))
+)?;
+
+println!("Session ID: {}", session.id);
+println!("Expires: {:?}", session.expires_at);</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>store()</h3>
+<pre><code>use avp::StoreOptions;
+use std::collections::HashMap;
+
+// Simple store
+client.store(&session, "API_KEY", b"sk-...", Default::default())?;
+
+// With options
+let mut labels = HashMap::new();
+labels.insert("env".to_string(), "production".to_string());
+
+let options = StoreOptions {
+    labels: Some(labels),
+    expires_at: None,
+};
+
+client.store(&session, "API_KEY", b"sk-...", options)?;</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>retrieve()</h3>
+<pre><code>// Latest version
+let secret = client.retrieve(&session, "API_KEY", None)?;
+
+// Specific version
+let secret = client.retrieve(&session, "API_KEY", Some(1))?;
+
+println!("Value: {:?}", secret.value);
+println!("Version: {}", secret.version);
+println!("Labels: {:?}", secret.labels);</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>delete()</h3>
+<pre><code>client.delete(&session, "OLD_KEY")?;</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>list()</h3>
+<pre><code>use avp::ListOptions;
+
+// List all
+let secrets = client.list(&session, Default::default())?;
+
+// With label filter
+let mut filter = HashMap::new();
+filter.insert("env".to_string(), "production".to_string());
+
+let options = ListOptions {
+    label_filter: Some(filter),
+};
+
+let secrets = client.list(&session, options)?;
+
+for secret in secrets {
+    println!("{}: v{}", secret.name, secret.version);
+}</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>rotate()</h3>
+<pre><code>let result = client.rotate(&session, "API_KEY", b"sk-new-...")?;
+
+println!("Previous: v{}", result.previous_version);
+println!("New: v{}", result.new_version);</code></pre>
+        </div>
+
+        <h2>Error Handling</h2>
+<pre><code>use avp::{Error, ErrorKind};
+
+match client.retrieve(&session, "UNKNOWN") {
+    Ok(secret) => println!("Found: {:?}", secret),
+    Err(Error { kind: ErrorKind::NotFound, .. }) => {
+        println!("Secret not found");
+    }
+    Err(Error { kind: ErrorKind::SessionExpired, .. }) => {
+        println!("Session expired, re-authenticate");
+    }
+    Err(e) => {
+        println!("Error: {}", e);
+    }
+}</code></pre>
+
+        <h2>Memory Safety</h2>
+        <div class="note">
+            <strong>Secure Memory:</strong> The Rust SDK uses the <code>zeroize</code> crate to securely clear secrets from memory when they go out of scope.
+        </div>
+<pre><code>use avp::SecretValue;
+
+{
+    let secret = client.retrieve(&session, "KEY", None)?;
+    // Use secret.value...
+} // Secret is securely zeroed here
+
+// For manual control:
+use zeroize::Zeroize;
+
+let mut sensitive_data = secret.value.clone();
+// Use sensitive_data...
+sensitive_data.zeroize(); // Explicitly zero</code></pre>
+
+        <h2>Custom Backend</h2>
+<pre><code>use avp::{Backend, Session, Secret, StoreOptions, ListOptions, Result};
+
+struct MyBackend {
+    // Your storage implementation
+}
+
+impl Backend for MyBackend {
+    fn discover(&self) -> Result<DiscoverInfo> {
+        // Return capabilities
+    }
+
+    fn authenticate(&self, workspace: &str, ttl: Option<Duration>) -> Result<Session> {
+        // Create session
+    }
+
+    fn store(&self, session: &Session, name: &str, value: &[u8], options: StoreOptions) -> Result<()> {
+        // Store secret
+    }
+
+    fn retrieve(&self, session: &Session, name: &str, version: Option<u32>) -> Result<Secret> {
+        // Retrieve secret
+    }
+
+    fn delete(&self, session: &Session, name: &str) -> Result<()> {
+        // Delete secret
+    }
+
+    fn list(&self, session: &Session, options: ListOptions) -> Result<Vec<SecretMetadata>> {
+        // List secrets
+    }
+
+    fn rotate(&self, session: &Session, name: &str, new_value: &[u8]) -> Result<RotateResult> {
+        // Rotate secret
+    }
+}</code></pre>
+
+        <h2>Feature Flags</h2>
+        <table class="param-table" style="width: 100%; border-collapse: collapse;">
+            <tr><th>Feature</th><th>Description</th></tr>
+            <tr><td><code>default</code></td><td>Memory backend only</td></tr>
+            <tr><td><code>file</code></td><td>Encrypted file backend</td></tr>
+            <tr><td><code>keychain</code></td><td>OS keychain backend</td></tr>
+            <tr><td><code>async</code></td><td>Async/await support with tokio</td></tr>
+            <tr><td><code>serde</code></td><td>Serde serialization support</td></tr>
+        </table>
+
+        <h2>Complete Example</h2>
+<pre><code>use avp::{Client, FileBackend, StoreOptions, Result};
+use std::collections::HashMap;
+
+fn main() -> Result<()> {
+    // Initialize
+    let backend = FileBackend::new("./agent-vault.enc", "secure-password")?;
+    let client = Client::new(backend);
+
+    // Authenticate
+    let session = client.authenticate("openai-agent", None)?;
+
+    // Store with labels
+    let mut labels = HashMap::new();
+    labels.insert("provider".to_string(), "openai".to_string());
+    labels.insert("env".to_string(), "production".to_string());
+
+    client.store(
+        &session,
+        "OPENAI_API_KEY",
+        b"sk-proj-...",
+        StoreOptions { labels: Some(labels), expires_at: None }
+    )?;
+
+    // Retrieve and use
+    let secret = client.retrieve(&session, "OPENAI_API_KEY", None)?;
+    let api_key = String::from_utf8_lossy(&secret.value);
+
+    // Use api_key with OpenAI client...
+    println!("Using API key v{}", secret.version);
+
+    // Rotate when needed
+    let result = client.rotate(&session, "OPENAI_API_KEY", b"sk-new-...")?;
+    println!("Rotated from v{} to v{}", result.previous_version, result.new_version);
+
+    Ok(())
+}</code></pre>
+
+        <footer style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <p style="color: var(--text-secondary);">
+                <a href="https://github.com/avp-protocol/avp-rs" style="color: var(--accent);">View on GitHub</a> ·
+                <a href="https://crates.io/crates/avp" style="color: var(--accent);">crates.io</a> ·
+                <a href="https://docs.rs/avp" style="color: var(--accent);">docs.rs</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

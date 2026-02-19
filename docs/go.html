@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go SDK - AVP Documentation</title>
+    <link rel="icon" href="../assets/avp-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; margin-bottom: 2rem; }
+        .back-link:hover { color: var(--accent); }
+        h1 { color: var(--text-primary); margin-bottom: 0.5rem; }
+        h2 { color: var(--accent); margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { color: var(--text-primary); margin-top: 1.5rem; }
+        p, li { color: var(--text-secondary); line-height: 1.7; }
+        pre { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+        code { font-family: 'Fira Code', 'SF Mono', Monaco, monospace; font-size: 0.9rem; color: var(--accent); }
+        pre code { color: var(--text-primary); }
+        .api-section { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+        .api-section h3 { margin-top: 0; color: var(--accent); }
+        .note { background: rgba(0, 212, 170, 0.1); border-left: 3px solid var(--accent); padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0; }
+        .feature { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+        .feature h4 { color: var(--accent); margin: 0 0 0.5rem 0; font-size: 0.95rem; }
+        .feature p { margin: 0; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="docs-container">
+        <a href="index.html" class="back-link">← Back to Docs</a>
+
+        <h1><img src="../img/go.svg" alt="Go" style="height: 32px; vertical-align: middle;"> Go SDK</h1>
+        <p>Idiomatic Go package with context support and concurrent-safe operations</p>
+
+        <div class="feature-grid">
+            <div class="feature">
+                <h4>Context Support</h4>
+                <p>All operations accept context for cancellation and timeouts</p>
+            </div>
+            <div class="feature">
+                <h4>Concurrent Safe</h4>
+                <p>Thread-safe operations with proper locking</p>
+            </div>
+            <div class="feature">
+                <h4>Zero Dependencies</h4>
+                <p>Standard library only for core functionality</p>
+            </div>
+            <div class="feature">
+                <h4>Idiomatic API</h4>
+                <p>Follows Go conventions and best practices</p>
+            </div>
+        </div>
+
+        <h2>Installation</h2>
+<pre><code>go get github.com/avp-protocol/avp-go</code></pre>
+
+        <h2>Quick Start</h2>
+<pre><code>package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/avp-protocol/avp-go"
+)
+
+func main() {
+    ctx := context.Background()
+
+    // Create client with file backend
+    backend, err := avp.NewFileBackend("./vault.enc", "your-password")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    client := avp.NewClient(backend)
+
+    // Authenticate to workspace
+    session, err := client.Authenticate(ctx, "my-agent", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Store a secret
+    err = client.Store(ctx, session.ID, "OPENAI_API_KEY", []byte("sk-..."), nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Retrieve a secret
+    secret, err := client.Retrieve(ctx, session.ID, "OPENAI_API_KEY", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Key: %s\n", string(secret.Value))
+}</code></pre>
+
+        <h2>Backends</h2>
+
+        <div class="api-section">
+            <h3>MemoryBackend</h3>
+            <p>In-memory storage for testing.</p>
+<pre><code>import "github.com/avp-protocol/avp-go"
+
+backend := avp.NewMemoryBackend()
+client := avp.NewClient(backend)</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>FileBackend</h3>
+            <p>Encrypted file storage using AES-256-GCM.</p>
+<pre><code>backend, err := avp.NewFileBackend("./vault.enc", "password")
+if err != nil {
+    log.Fatal(err)
+}
+
+client := avp.NewClient(backend)</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>KeychainBackend</h3>
+            <p>OS-native credential storage.</p>
+<pre><code>backend, err := avp.NewKeychainBackend("my-app-avp")
+if err != nil {
+    log.Fatal(err)
+}
+
+client := avp.NewClient(backend)</code></pre>
+        </div>
+
+        <h2>Operations</h2>
+
+        <div class="api-section">
+            <h3>Discover</h3>
+<pre><code>info, err := client.Discover(ctx)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Printf("Version: %s\n", info.Version)
+fmt.Printf("Backends: %v\n", info.Backends)
+fmt.Printf("Operations: %v\n", info.Operations)</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>Authenticate</h3>
+<pre><code>import "time"
+
+// Default TTL (1 hour)
+session, err := client.Authenticate(ctx, "workspace", nil)
+
+// Custom TTL
+ttl := 2 * time.Hour
+session, err := client.Authenticate(ctx, "workspace", &avp.AuthOptions{
+    TTL: &ttl,
+})
+
+fmt.Printf("Session ID: %s\n", session.ID)
+fmt.Printf("Expires: %v\n", session.ExpiresAt)</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>Store</h3>
+<pre><code>// Simple store
+err := client.Store(ctx, session.ID, "API_KEY", []byte("sk-..."), nil)
+
+// With options
+err := client.Store(ctx, session.ID, "API_KEY", []byte("sk-..."), &avp.StoreOptions{
+    Labels: map[string]string{
+        "env":      "production",
+        "provider": "openai",
+    },
+    ExpiresAt: time.Now().Add(30 * 24 * time.Hour), // 30 days
+})</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>Retrieve</h3>
+<pre><code>// Latest version
+secret, err := client.Retrieve(ctx, session.ID, "API_KEY", nil)
+
+// Specific version
+version := uint32(1)
+secret, err := client.Retrieve(ctx, session.ID, "API_KEY", &avp.RetrieveOptions{
+    Version: &version,
+})
+
+fmt.Printf("Value: %s\n", string(secret.Value))
+fmt.Printf("Version: %d\n", secret.Version)
+fmt.Printf("Labels: %v\n", secret.Labels)</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>Delete</h3>
+<pre><code>err := client.Delete(ctx, session.ID, "OLD_KEY")</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>List</h3>
+<pre><code>// List all
+secrets, err := client.List(ctx, session.ID, nil)
+
+// With label filter
+secrets, err := client.List(ctx, session.ID, &avp.ListOptions{
+    LabelFilter: map[string]string{
+        "env": "production",
+    },
+})
+
+for _, s := range secrets {
+    fmt.Printf("%s: v%d\n", s.Name, s.Version)
+}</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>Rotate</h3>
+<pre><code>result, err := client.Rotate(ctx, session.ID, "API_KEY", []byte("sk-new-..."))
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Printf("Previous: v%d\n", result.PreviousVersion)
+fmt.Printf("New: v%d\n", result.NewVersion)</code></pre>
+        </div>
+
+        <h2>Error Handling</h2>
+<pre><code>import "errors"
+
+secret, err := client.Retrieve(ctx, session.ID, "UNKNOWN", nil)
+if err != nil {
+    var avpErr *avp.Error
+    if errors.As(err, &avpErr) {
+        switch avpErr.Code {
+        case avp.ErrNotFound:
+            fmt.Println("Secret not found")
+        case avp.ErrSessionExpired:
+            fmt.Println("Session expired, re-authenticate")
+        case avp.ErrUnauthorized:
+            fmt.Println("Not authorized for this workspace")
+        default:
+            fmt.Printf("AVP Error: %s\n", avpErr.Message)
+        }
+    } else {
+        fmt.Printf("Error: %v\n", err)
+    }
+}</code></pre>
+
+        <h2>Context and Timeouts</h2>
+<pre><code>import (
+    "context"
+    "time"
+)
+
+// With timeout
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+secret, err := client.Retrieve(ctx, session.ID, "API_KEY", nil)
+if err != nil {
+    if errors.Is(err, context.DeadlineExceeded) {
+        fmt.Println("Operation timed out")
+    }
+}
+
+// With cancellation
+ctx, cancel := context.WithCancel(context.Background())
+
+go func() {
+    // Cancel after some condition
+    cancel()
+}()
+
+secret, err := client.Retrieve(ctx, session.ID, "API_KEY", nil)</code></pre>
+
+        <h2>Concurrent Usage</h2>
+        <div class="note">
+            <strong>Thread Safety:</strong> The AVP client is safe for concurrent use. Multiple goroutines can call methods on the same client simultaneously.
+        </div>
+<pre><code>import "sync"
+
+var wg sync.WaitGroup
+
+keys := []string{"KEY1", "KEY2", "KEY3"}
+
+for _, key := range keys {
+    wg.Add(1)
+    go func(k string) {
+        defer wg.Done()
+        secret, err := client.Retrieve(ctx, session.ID, k, nil)
+        if err != nil {
+            log.Printf("Error retrieving %s: %v", k, err)
+            return
+        }
+        fmt.Printf("%s: %s\n", k, string(secret.Value))
+    }(key)
+}
+
+wg.Wait()</code></pre>
+
+        <h2>Custom Backend</h2>
+<pre><code>package main
+
+import (
+    "context"
+    "time"
+
+    "github.com/avp-protocol/avp-go"
+)
+
+type MyBackend struct {
+    // Your storage implementation
+}
+
+func (b *MyBackend) Discover(ctx context.Context) (*avp.DiscoverInfo, error) {
+    // Return capabilities
+}
+
+func (b *MyBackend) Authenticate(ctx context.Context, workspace string, opts *avp.AuthOptions) (*avp.Session, error) {
+    // Create session
+}
+
+func (b *MyBackend) Store(ctx context.Context, sessionID, name string, value []byte, opts *avp.StoreOptions) error {
+    // Store secret
+}
+
+func (b *MyBackend) Retrieve(ctx context.Context, sessionID, name string, opts *avp.RetrieveOptions) (*avp.Secret, error) {
+    // Retrieve secret
+}
+
+func (b *MyBackend) Delete(ctx context.Context, sessionID, name string) error {
+    // Delete secret
+}
+
+func (b *MyBackend) List(ctx context.Context, sessionID string, opts *avp.ListOptions) ([]*avp.SecretMetadata, error) {
+    // List secrets
+}
+
+func (b *MyBackend) Rotate(ctx context.Context, sessionID, name string, newValue []byte) (*avp.RotateResult, error) {
+    // Rotate secret
+}
+
+// Verify interface implementation
+var _ avp.Backend = (*MyBackend)(nil)</code></pre>
+
+        <h2>Complete Example</h2>
+<pre><code>package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+
+    "github.com/avp-protocol/avp-go"
+)
+
+func main() {
+    ctx := context.Background()
+
+    // Initialize
+    backend, err := avp.NewFileBackend("./agent-vault.enc", os.Getenv("VAULT_PASSWORD"))
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    client := avp.NewClient(backend)
+
+    // Authenticate
+    session, err := client.Authenticate(ctx, "openai-agent", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Store with labels
+    err = client.Store(ctx, session.ID, "OPENAI_API_KEY", []byte(os.Getenv("OPENAI_API_KEY")), &avp.StoreOptions{
+        Labels: map[string]string{
+            "provider": "openai",
+            "env":      "production",
+        },
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Retrieve and use
+    secret, err := client.Retrieve(ctx, session.ID, "OPENAI_API_KEY", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    apiKey := string(secret.Value)
+    fmt.Printf("Using API key v%d\n", secret.Version)
+
+    // Use apiKey with OpenAI client...
+    _ = apiKey
+
+    // Rotate when needed
+    result, err := client.Rotate(ctx, session.ID, "OPENAI_API_KEY", []byte("sk-new-..."))
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Rotated from v%d to v%d\n", result.PreviousVersion, result.NewVersion)
+}</code></pre>
+
+        <footer style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <p style="color: var(--text-secondary);">
+                <a href="https://github.com/avp-protocol/avp-go" style="color: var(--accent);">View on GitHub</a> ·
+                <a href="https://pkg.go.dev/github.com/avp-protocol/avp-go" style="color: var(--accent);">pkg.go.dev</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

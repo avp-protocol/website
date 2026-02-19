@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Model - AVP Documentation</title>
+    <link rel="icon" href="../assets/avp-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; margin-bottom: 2rem; }
+        .back-link:hover { color: var(--accent); }
+        h1 { color: var(--text-primary); margin-bottom: 0.5rem; }
+        h2 { color: var(--accent); margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { color: var(--text-primary); margin-top: 1.5rem; }
+        p, li { color: var(--text-secondary); line-height: 1.7; }
+        pre { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+        code { font-family: 'Fira Code', 'SF Mono', Monaco, monospace; font-size: 0.9rem; color: var(--accent); }
+        pre code { color: var(--text-primary); }
+        .security-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+        .security-card h3 { margin-top: 0; color: var(--accent); }
+        .threat-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .threat-table th, .threat-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+        .threat-table th { color: var(--text-primary); }
+        .threat-table td { color: var(--text-secondary); }
+        .warning { background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107; padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .success { background: rgba(0, 212, 170, 0.1); border-left: 3px solid var(--accent); padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+    </style>
+</head>
+<body>
+    <div class="docs-container">
+        <a href="index.html" class="back-link">← Back to Docs</a>
+
+        <h1>Security Model</h1>
+        <p>How AVP protects your AI agent credentials at every layer</p>
+
+        <h2>Security Philosophy</h2>
+        <p>AVP follows a defense-in-depth approach with multiple layers of protection:</p>
+        <ol>
+            <li><strong>Encryption at Rest</strong> - Credentials are always encrypted when stored</li>
+            <li><strong>Workspace Isolation</strong> - Secrets cannot cross workspace boundaries</li>
+            <li><strong>Session Management</strong> - Time-limited access with explicit authentication</li>
+            <li><strong>Memory Protection</strong> - Secrets are handled carefully to minimize exposure</li>
+            <li><strong>Hardware Security</strong> - Optional HSM support for maximum protection</li>
+        </ol>
+
+        <h2>Encryption</h2>
+
+        <div class="security-card">
+            <h3>File Backend Encryption</h3>
+            <p>The file backend uses industry-standard cryptography:</p>
+            <ul>
+                <li><strong>Algorithm:</strong> Fernet (AES-128-CBC + HMAC-SHA256)</li>
+                <li><strong>Key Derivation:</strong> PBKDF2-HMAC-SHA256</li>
+                <li><strong>Iterations:</strong> 480,000 (OWASP 2023 recommendation)</li>
+                <li><strong>Salt:</strong> 16 bytes, unique per vault</li>
+            </ul>
+<pre><code># Key derivation process
+key = PBKDF2(
+    password=user_password,
+    salt=random_16_bytes,
+    iterations=480000,
+    hash=SHA256
+)
+
+# Encryption
+ciphertext = Fernet(key).encrypt(plaintext)</code></pre>
+        </div>
+
+        <div class="security-card">
+            <h3>Keychain Backend</h3>
+            <p>Leverages OS-provided security infrastructure:</p>
+            <ul>
+                <li><strong>macOS:</strong> Keychain Services with Secure Enclave support</li>
+                <li><strong>Windows:</strong> Credential Manager with DPAPI encryption</li>
+                <li><strong>Linux:</strong> Secret Service API (GNOME Keyring, KWallet)</li>
+            </ul>
+            <p>Keys are protected by the OS and may require biometric authentication.</p>
+        </div>
+
+        <div class="security-card">
+            <h3>Hardware Backend (NexusClaw)</h3>
+            <p>Maximum security with FIPS 140-3 Level 3 certified hardware:</p>
+            <ul>
+                <li><strong>Key Storage:</strong> Keys never leave the secure element</li>
+                <li><strong>Encryption:</strong> AES-256-GCM performed on-device</li>
+                <li><strong>Signing:</strong> ECDSA P-256 with hardware-protected keys</li>
+                <li><strong>Attestation:</strong> Cryptographic proof of genuine hardware</li>
+            </ul>
+        </div>
+
+        <h2>Threat Model</h2>
+        <p>AVP is designed to protect against these threats:</p>
+
+        <table class="threat-table">
+            <thead>
+                <tr>
+                    <th>Threat</th>
+                    <th>Protection</th>
+                    <th>Backend</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Plaintext credential exposure</td>
+                    <td>All credentials encrypted at rest</td>
+                    <td>All</td>
+                </tr>
+                <tr>
+                    <td>Cross-agent credential leakage</td>
+                    <td>Workspace isolation boundaries</td>
+                    <td>All</td>
+                </tr>
+                <tr>
+                    <td>Brute force password attacks</td>
+                    <td>480K PBKDF2 iterations</td>
+                    <td>File</td>
+                </tr>
+                <tr>
+                    <td>Memory scraping</td>
+                    <td>Secure memory handling, minimal plaintext time</td>
+                    <td>All</td>
+                </tr>
+                <tr>
+                    <td>Disk forensics</td>
+                    <td>Strong encryption, no plaintext on disk</td>
+                    <td>File, Keychain</td>
+                </tr>
+                <tr>
+                    <td>Key extraction attacks</td>
+                    <td>Keys never leave hardware</td>
+                    <td>Hardware</td>
+                </tr>
+                <tr>
+                    <td>Replay attacks</td>
+                    <td>Session tokens with expiration</td>
+                    <td>All</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Session Security</h2>
+
+        <div class="security-card">
+            <h3>Session Properties</h3>
+            <ul>
+                <li><strong>Random IDs:</strong> 128-bit cryptographically random session identifiers</li>
+                <li><strong>Time-Limited:</strong> Sessions expire after configurable TTL (default: 1 hour)</li>
+                <li><strong>Workspace-Bound:</strong> A session can only access secrets in its workspace</li>
+                <li><strong>Revocable:</strong> Sessions can be explicitly terminated</li>
+            </ul>
+<pre><code># Session creation with TTL
+session = client.authenticate(
+    workspace="production",
+    ttl_seconds=3600  # 1 hour
+)
+
+# Session expires automatically after TTL
+# Or can be terminated explicitly
+client.terminate(session.session_id)</code></pre>
+        </div>
+
+        <h2>Memory Protection</h2>
+        <p>AVP implementations follow these guidelines for handling secrets in memory:</p>
+        <ul>
+            <li><strong>Minimize Exposure:</strong> Secrets are decrypted only when needed</li>
+            <li><strong>Secure Clearing:</strong> Memory is overwritten before deallocation (where language allows)</li>
+            <li><strong>No Logging:</strong> Secret values are never written to logs or debug output</li>
+            <li><strong>No Temp Files:</strong> Secrets are never written to temporary files</li>
+        </ul>
+
+        <div class="warning">
+            <strong>Language Limitations:</strong> Some languages (Python, JavaScript) have garbage collection that makes secure memory clearing difficult. For maximum memory protection, use the Rust SDK or hardware backend.
+        </div>
+
+        <h2>Best Practices</h2>
+
+        <div class="success">
+            <h4>Recommended Security Configuration</h4>
+            <ol>
+                <li><strong>Development:</strong> Use file backend with a strong password</li>
+                <li><strong>Staging:</strong> Use keychain backend for OS-level protection</li>
+                <li><strong>Production:</strong> Use hardware backend (NexusClaw) for maximum security</li>
+            </ol>
+        </div>
+
+        <h3>Password Requirements</h3>
+        <p>For file backend, use passwords that are:</p>
+        <ul>
+            <li>At least 16 characters long</li>
+            <li>Generated randomly (use <code>avp generate-password</code>)</li>
+            <li>Stored securely (not in source code or environment variables)</li>
+        </ul>
+
+        <h3>Workspace Organization</h3>
+        <ul>
+            <li>Use separate workspaces for different environments (dev/staging/prod)</li>
+            <li>Use separate workspaces for different agents in multi-agent systems</li>
+            <li>Never share workspace credentials between unrelated systems</li>
+        </ul>
+
+        <h2>Compliance</h2>
+        <p>AVP's security model supports compliance with:</p>
+        <ul>
+            <li><strong>SOC 2:</strong> Encryption at rest, access controls, audit logging</li>
+            <li><strong>GDPR:</strong> Data protection, secure storage</li>
+            <li><strong>PCI DSS:</strong> Strong cryptography, key management (with hardware backend)</li>
+            <li><strong>HIPAA:</strong> Encryption, access controls (with appropriate configuration)</li>
+        </ul>
+
+        <div class="warning">
+            <strong>Note:</strong> Compliance depends on your overall system architecture. AVP provides the building blocks, but you must ensure proper configuration and operational practices.
+        </div>
+
+        <h2>Security Reporting</h2>
+        <p>Found a security vulnerability? Please report it responsibly:</p>
+        <ul>
+            <li>Email: <a href="mailto:security@avp-protocol.org" style="color: var(--accent);">security@avp-protocol.org</a></li>
+            <li>Do not disclose publicly until we've had a chance to address it</li>
+            <li>We aim to respond within 48 hours</li>
+        </ul>
+
+        <footer style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <p style="color: var(--text-secondary);">
+                <a href="https://github.com/avp-protocol/spec" style="color: var(--accent);">Full Specification</a> ·
+                <a href="https://github.com/avp-protocol" style="color: var(--accent);">GitHub</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

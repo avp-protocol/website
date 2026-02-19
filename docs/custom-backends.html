@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Backends - AVP Documentation</title>
+    <link rel="icon" href="../assets/avp-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; margin-bottom: 2rem; }
+        .back-link:hover { color: var(--accent); }
+        h1 { color: var(--text-primary); margin-bottom: 0.5rem; }
+        h2 { color: var(--accent); margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { color: var(--text-primary); margin-top: 1.5rem; }
+        p, li { color: var(--text-secondary); line-height: 1.7; }
+        pre { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+        code { font-family: 'Fira Code', 'SF Mono', Monaco, monospace; font-size: 0.9rem; color: var(--accent); }
+        pre code { color: var(--text-primary); }
+        .interface { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+        .interface h3 { margin-top: 0; color: var(--accent); }
+        .note { background: rgba(0, 212, 170, 0.1); border-left: 3px solid var(--accent); padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .warning { background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107; padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .method { margin: 1.5rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; }
+        .method h4 { color: var(--accent); margin: 0 0 0.5rem 0; font-family: 'Fira Code', monospace; }
+        .method p { margin: 0.5rem 0 0 0; }
+    </style>
+</head>
+<body>
+    <div class="docs-container">
+        <a href="index.html" class="back-link">← Back to Docs</a>
+
+        <h1>Custom Backends</h1>
+        <p>Build your own backend for specialized storage requirements</p>
+
+        <h2>When to Build a Custom Backend</h2>
+        <p>Consider building a custom backend when you need:</p>
+        <ul>
+            <li><strong>Cloud Integration</strong> - AWS Secrets Manager, GCP Secret Manager, Azure Key Vault</li>
+            <li><strong>Enterprise Vaults</strong> - HashiCorp Vault, CyberArk, Thycotic</li>
+            <li><strong>Database Storage</strong> - Store encrypted secrets in PostgreSQL, MongoDB</li>
+            <li><strong>Custom Hardware</strong> - Proprietary HSM or secure enclave</li>
+            <li><strong>Hybrid Solutions</strong> - Combine multiple storage backends</li>
+        </ul>
+
+        <h2>Backend Interface</h2>
+        <p>All backends must implement the AVP Backend interface. Here's the interface definition for each language:</p>
+
+        <h3>Python Interface</h3>
+        <div class="interface">
+<pre><code>from abc import ABC, abstractmethod
+from typing import Optional, Dict, List
+from dataclasses import dataclass
+from datetime import datetime
+
+@dataclass
+class DiscoverInfo:
+    version: str
+    backends: List[str]
+    operations: List[str]
+    extensions: List[str]
+
+@dataclass
+class Session:
+    session_id: str
+    workspace: str
+    expires_at: datetime
+
+@dataclass
+class Secret:
+    name: str
+    value: bytes
+    version: int
+    labels: Dict[str, str]
+    created_at: datetime
+    updated_at: datetime
+
+@dataclass
+class SecretMetadata:
+    name: str
+    version: int
+    labels: Dict[str, str]
+
+@dataclass
+class RotateResult:
+    previous_version: int
+    new_version: int
+
+class Backend(ABC):
+    @abstractmethod
+    def discover(self) -> DiscoverInfo:
+        """Return backend capabilities."""
+        pass
+
+    @abstractmethod
+    def authenticate(self, workspace: str, ttl_seconds: Optional[int] = None) -> Session:
+        """Create an authenticated session."""
+        pass
+
+    @abstractmethod
+    def store(self, session_id: str, name: str, value: bytes,
+              labels: Optional[Dict[str, str]] = None,
+              expires_at: Optional[datetime] = None) -> None:
+        """Store a secret."""
+        pass
+
+    @abstractmethod
+    def retrieve(self, session_id: str, name: str,
+                 version: Optional[int] = None) -> Secret:
+        """Retrieve a secret."""
+        pass
+
+    @abstractmethod
+    def delete(self, session_id: str, name: str) -> None:
+        """Delete a secret."""
+        pass
+
+    @abstractmethod
+    def list(self, session_id: str,
+             label_filter: Optional[Dict[str, str]] = None) -> List[SecretMetadata]:
+        """List secrets in the workspace."""
+        pass
+
+    @abstractmethod
+    def rotate(self, session_id: str, name: str, new_value: bytes) -> RotateResult:
+        """Rotate a secret value."""
+        pass</code></pre>
+        </div>
+
+        <h3>TypeScript Interface</h3>
+        <div class="interface">
+<pre><code>interface DiscoverInfo {
+  version: string;
+  backends: string[];
+  operations: string[];
+  extensions: string[];
+}
+
+interface Session {
+  sessionId: string;
+  workspace: string;
+  expiresAt: Date;
+}
+
+interface Secret {
+  name: string;
+  value: Buffer;
+  version: number;
+  labels: Record&lt;string, string&gt;;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface SecretMetadata {
+  name: string;
+  version: number;
+  labels: Record&lt;string, string&gt;;
+}
+
+interface RotateResult {
+  previousVersion: number;
+  newVersion: number;
+}
+
+interface Backend {
+  discover(): Promise&lt;DiscoverInfo&gt;;
+  authenticate(workspace: string, ttlSeconds?: number): Promise&lt;Session&gt;;
+  store(sessionId: string, name: string, value: Buffer,
+        labels?: Record&lt;string, string&gt;, expiresAt?: Date): Promise&lt;void&gt;;
+  retrieve(sessionId: string, name: string, version?: number): Promise&lt;Secret&gt;;
+  delete(sessionId: string, name: string): Promise&lt;void&gt;;
+  list(sessionId: string, labelFilter?: Record&lt;string, string&gt;): Promise&lt;SecretMetadata[]&gt;;
+  rotate(sessionId: string, name: string, newValue: Buffer): Promise&lt;RotateResult&gt;;
+}</code></pre>
+        </div>
+
+        <h2>Example: Redis Backend</h2>
+        <p>Here's a complete example of a custom Redis backend in Python:</p>
+
+<pre><code>"""Redis backend for AVP - stores encrypted secrets in Redis."""
+
+import json
+import secrets
+import hashlib
+from datetime import datetime, timedelta
+from typing import Optional, Dict, List
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+import base64
+import redis
+
+from avp import Backend, DiscoverInfo, Session, Secret, SecretMetadata, RotateResult
+from avp.errors import NotFoundError, SessionExpiredError, UnauthorizedError
+
+
+class RedisBackend(Backend):
+    """AVP backend using Redis for storage with client-side encryption."""
+
+    def __init__(self, redis_url: str, encryption_key: str):
+        """
+        Initialize Redis backend.
+
+        Args:
+            redis_url: Redis connection URL (redis://localhost:6379/0)
+            encryption_key: Master encryption key for secrets
+        """
+        self.redis = redis.from_url(redis_url)
+        self.fernet = self._derive_fernet(encryption_key)
+
+    def _derive_fernet(self, password: str) -> Fernet:
+        """Derive Fernet key from password."""
+        # Use a fixed salt for deterministic key derivation
+        # In production, store salt separately
+        salt = b'avp-redis-backend-salt-v1'
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=480000,
+        )
+        key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+        return Fernet(key)
+
+    def _encrypt(self, data: bytes) -> bytes:
+        """Encrypt data."""
+        return self.fernet.encrypt(data)
+
+    def _decrypt(self, data: bytes) -> bytes:
+        """Decrypt data."""
+        return self.fernet.decrypt(data)
+
+    def _session_key(self, session_id: str) -> str:
+        return f"avp:session:{session_id}"
+
+    def _secret_key(self, workspace: str, name: str) -> str:
+        return f"avp:secret:{workspace}:{name}"
+
+    def _workspace_key(self, workspace: str) -> str:
+        return f"avp:workspace:{workspace}"
+
+    def discover(self) -> DiscoverInfo:
+        return DiscoverInfo(
+            version="0.1.0",
+            backends=["redis"],
+            operations=["DISCOVER", "AUTHENTICATE", "STORE", "RETRIEVE",
+                       "DELETE", "LIST", "ROTATE"],
+            extensions=[]
+        )
+
+    def authenticate(self, workspace: str, ttl_seconds: Optional[int] = None) -> Session:
+        ttl = ttl_seconds or 3600
+        session_id = secrets.token_urlsafe(32)
+        expires_at = datetime.utcnow() + timedelta(seconds=ttl)
+
+        session_data = {
+            "workspace": workspace,
+            "expires_at": expires_at.isoformat()
+        }
+
+        # Store session with TTL
+        self.redis.setex(
+            self._session_key(session_id),
+            ttl,
+            json.dumps(session_data)
+        )
+
+        return Session(
+            session_id=session_id,
+            workspace=workspace,
+            expires_at=expires_at
+        )
+
+    def _get_session(self, session_id: str) -> dict:
+        """Get and validate session."""
+        data = self.redis.get(self._session_key(session_id))
+        if not data:
+            raise SessionExpiredError("Session not found or expired")
+
+        session = json.loads(data)
+        expires_at = datetime.fromisoformat(session["expires_at"])
+
+        if datetime.utcnow() > expires_at:
+            raise SessionExpiredError("Session expired")
+
+        return session
+
+    def store(self, session_id: str, name: str, value: bytes,
+              labels: Optional[Dict[str, str]] = None,
+              expires_at: Optional[datetime] = None) -> None:
+        session = self._get_session(session_id)
+        workspace = session["workspace"]
+
+        # Check if secret exists (for versioning)
+        existing = self.redis.get(self._secret_key(workspace, name))
+        version = 1
+        if existing:
+            existing_data = json.loads(self._decrypt(existing))
+            version = existing_data["version"] + 1
+
+        now = datetime.utcnow()
+        secret_data = {
+            "name": name,
+            "value": base64.b64encode(value).decode(),
+            "version": version,
+            "labels": labels or {},
+            "created_at": now.isoformat() if version == 1 else existing_data["created_at"],
+            "updated_at": now.isoformat(),
+            "expires_at": expires_at.isoformat() if expires_at else None
+        }
+
+        # Encrypt and store
+        encrypted = self._encrypt(json.dumps(secret_data).encode())
+
+        if expires_at:
+            ttl = int((expires_at - now).total_seconds())
+            self.redis.setex(self._secret_key(workspace, name), ttl, encrypted)
+        else:
+            self.redis.set(self._secret_key(workspace, name), encrypted)
+
+        # Add to workspace index
+        self.redis.sadd(self._workspace_key(workspace), name)
+
+    def retrieve(self, session_id: str, name: str,
+                 version: Optional[int] = None) -> Secret:
+        session = self._get_session(session_id)
+        workspace = session["workspace"]
+
+        data = self.redis.get(self._secret_key(workspace, name))
+        if not data:
+            raise NotFoundError(f"Secret '{name}' not found")
+
+        secret_data = json.loads(self._decrypt(data))
+
+        # Version check (we only keep latest in this simple implementation)
+        if version and secret_data["version"] != version:
+            raise NotFoundError(f"Version {version} not found")
+
+        return Secret(
+            name=secret_data["name"],
+            value=base64.b64decode(secret_data["value"]),
+            version=secret_data["version"],
+            labels=secret_data["labels"],
+            created_at=datetime.fromisoformat(secret_data["created_at"]),
+            updated_at=datetime.fromisoformat(secret_data["updated_at"])
+        )
+
+    def delete(self, session_id: str, name: str) -> None:
+        session = self._get_session(session_id)
+        workspace = session["workspace"]
+
+        self.redis.delete(self._secret_key(workspace, name))
+        self.redis.srem(self._workspace_key(workspace), name)
+
+    def list(self, session_id: str,
+             label_filter: Optional[Dict[str, str]] = None) -> List[SecretMetadata]:
+        session = self._get_session(session_id)
+        workspace = session["workspace"]
+
+        # Get all secret names in workspace
+        names = self.redis.smembers(self._workspace_key(workspace))
+
+        results = []
+        for name in names:
+            name = name.decode() if isinstance(name, bytes) else name
+            data = self.redis.get(self._secret_key(workspace, name))
+            if not data:
+                continue
+
+            secret_data = json.loads(self._decrypt(data))
+
+            # Apply label filter
+            if label_filter:
+                labels = secret_data.get("labels", {})
+                if not all(labels.get(k) == v for k, v in label_filter.items()):
+                    continue
+
+            results.append(SecretMetadata(
+                name=secret_data["name"],
+                version=secret_data["version"],
+                labels=secret_data["labels"]
+            ))
+
+        return results
+
+    def rotate(self, session_id: str, name: str, new_value: bytes) -> RotateResult:
+        session = self._get_session(session_id)
+        workspace = session["workspace"]
+
+        # Get existing secret
+        data = self.redis.get(self._secret_key(workspace, name))
+        if not data:
+            raise NotFoundError(f"Secret '{name}' not found")
+
+        existing = json.loads(self._decrypt(data))
+        previous_version = existing["version"]
+
+        # Store new version
+        self.store(session_id, name, new_value, existing.get("labels"))
+
+        return RotateResult(
+            previous_version=previous_version,
+            new_version=previous_version + 1
+        )</code></pre>
+
+        <h2>Using Your Custom Backend</h2>
+<pre><code>from avp import AVPClient
+from my_backends import RedisBackend
+
+# Create client with custom backend
+backend = RedisBackend(
+    redis_url="redis://localhost:6379/0",
+    encryption_key="your-encryption-key"
+)
+
+client = AVPClient(backend)
+
+# Use like any other backend
+session = client.authenticate("my-workspace")
+client.store(session.session_id, "API_KEY", b"secret-value")
+secret = client.retrieve(session.session_id, "API_KEY")</code></pre>
+
+        <h2>Best Practices</h2>
+
+        <div class="note">
+            <h4>Security Requirements</h4>
+            <ul style="margin-bottom: 0;">
+                <li><strong>Encrypt at rest</strong> - Always encrypt secrets before storage</li>
+                <li><strong>Validate sessions</strong> - Check session expiration on every operation</li>
+                <li><strong>Workspace isolation</strong> - Ensure secrets can't leak across workspaces</li>
+                <li><strong>Secure key management</strong> - Never hardcode encryption keys</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <h4>Common Pitfalls</h4>
+            <ul style="margin-bottom: 0;">
+                <li><strong>Logging secrets</strong> - Never log secret values, even in debug mode</li>
+                <li><strong>Weak encryption</strong> - Use established libraries, not custom crypto</li>
+                <li><strong>Missing error handling</strong> - Handle all error cases gracefully</li>
+                <li><strong>Race conditions</strong> - Use atomic operations where possible</li>
+            </ul>
+        </div>
+
+        <h2>Testing Your Backend</h2>
+<pre><code>import pytest
+from avp.testing import BackendTestSuite
+from my_backends import RedisBackend
+
+class TestRedisBackend(BackendTestSuite):
+    """Run standard AVP backend tests against Redis backend."""
+
+    @pytest.fixture
+    def backend(self):
+        return RedisBackend(
+            redis_url="redis://localhost:6379/15",  # Use test database
+            encryption_key="test-key"
+        )
+
+    def teardown_method(self):
+        # Clean up test data
+        import redis
+        r = redis.from_url("redis://localhost:6379/15")
+        r.flushdb()</code></pre>
+
+        <h2>Publishing Your Backend</h2>
+        <p>If you build a useful backend, consider publishing it:</p>
+        <ol>
+            <li>Create a package named <code>avp-backend-{name}</code></li>
+            <li>Include comprehensive documentation</li>
+            <li>Add integration tests</li>
+            <li>Publish to PyPI/npm/crates.io</li>
+            <li>Open a PR to add it to the AVP ecosystem page</li>
+        </ol>
+
+        <footer style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <p style="color: var(--text-secondary);">
+                <a href="https://github.com/avp-protocol/spec" style="color: var(--accent);">Full Specification</a> ·
+                <a href="https://github.com/avp-protocol" style="color: var(--accent);">GitHub</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

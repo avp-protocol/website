@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeScript SDK - AVP Documentation</title>
+    <link rel="icon" href="../assets/avp-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; margin-bottom: 2rem; }
+        .back-link:hover { color: var(--accent); }
+        h1 { color: var(--text-primary); margin-bottom: 0.5rem; }
+        h2 { color: var(--accent); margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { color: var(--text-primary); margin-top: 1.5rem; }
+        p, li { color: var(--text-secondary); line-height: 1.7; }
+        pre { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+        code { font-family: 'Fira Code', 'SF Mono', Monaco, monospace; font-size: 0.9rem; color: var(--accent); }
+        pre code { color: var(--text-primary); }
+        .api-section { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+        .api-section h3 { margin-top: 0; color: var(--accent); }
+        .note { background: rgba(0, 212, 170, 0.1); border-left: 3px solid var(--accent); padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .param-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .param-table th, .param-table td { padding: 0.5rem; text-align: left; border-bottom: 1px solid var(--border); }
+        .param-table th { color: var(--text-primary); font-size: 0.9rem; }
+        .param-table td { color: var(--text-secondary); font-size: 0.9rem; }
+        .param-table code { font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <div class="docs-container">
+        <a href="index.html" class="back-link">← Back to Docs</a>
+
+        <h1><img src="../img/typescript.svg" alt="TypeScript" style="height: 32px; vertical-align: middle;"> TypeScript SDK</h1>
+        <p>Modern async/await API for Node.js and browser environments</p>
+
+        <h2>Installation</h2>
+<pre><code># npm
+npm install @avp-protocol/sdk
+
+# yarn
+yarn add @avp-protocol/sdk
+
+# pnpm
+pnpm add @avp-protocol/sdk</code></pre>
+
+        <h2>Quick Start</h2>
+<pre><code>import { AVPClient, FileBackend } from '@avp-protocol/sdk';
+
+// Create client with file backend
+const client = new AVPClient({
+  backend: new FileBackend({
+    path: './vault.enc',
+    password: 'your-secure-password'
+  })
+});
+
+// Authenticate to a workspace
+const session = await client.authenticate({ workspace: 'my-agent' });
+
+// Store a secret
+await client.store({
+  sessionId: session.sessionId,
+  name: 'OPENAI_API_KEY',
+  value: Buffer.from('sk-...')
+});
+
+// Retrieve a secret
+const secret = await client.retrieve({
+  sessionId: session.sessionId,
+  name: 'OPENAI_API_KEY'
+});
+
+console.log(secret.value.toString()); // sk-...</code></pre>
+
+        <h2>Client Configuration</h2>
+
+        <div class="api-section">
+            <h3>AVPClient Constructor</h3>
+<pre><code>interface AVPClientOptions {
+  backend: Backend;           // Storage backend instance
+  logger?: Logger;            // Optional custom logger
+  defaultTtl?: number;        // Default session TTL in seconds
+}
+
+const client = new AVPClient({
+  backend: new FileBackend({ path: './vault.enc', password: 'pass' }),
+  defaultTtl: 3600
+});</code></pre>
+        </div>
+
+        <h2>Backends</h2>
+
+        <div class="api-section">
+            <h3>MemoryBackend</h3>
+            <p>In-memory storage for testing. Data is lost when the process exits.</p>
+<pre><code>import { MemoryBackend } from '@avp-protocol/sdk';
+
+const backend = new MemoryBackend();</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>FileBackend</h3>
+            <p>Encrypted file storage using AES-256-GCM.</p>
+<pre><code>import { FileBackend } from '@avp-protocol/sdk';
+
+const backend = new FileBackend({
+  path: './vault.enc',      // Path to encrypted vault file
+  password: 'your-password' // Encryption password
+});</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>KeychainBackend</h3>
+            <p>OS-native credential storage (requires <code>keytar</code> peer dependency).</p>
+<pre><code>import { KeychainBackend } from '@avp-protocol/sdk';
+
+// First install keytar
+// npm install keytar
+
+const backend = new KeychainBackend({
+  serviceName: 'my-app-avp'  // Service identifier in keychain
+});</code></pre>
+        </div>
+
+        <h2>Operations</h2>
+
+        <div class="api-section">
+            <h3>discover()</h3>
+            <p>Query vault capabilities.</p>
+<pre><code>const info = await client.discover();
+
+console.log(info.version);      // "0.1.0"
+console.log(info.backends);     // ["memory", "file", "keychain"]
+console.log(info.operations);   // ["DISCOVER", "AUTHENTICATE", ...]</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>authenticate(options)</h3>
+            <p>Create an authenticated session.</p>
+            <table class="param-table">
+                <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+                <tr><td><code>workspace</code></td><td>string</td><td>Workspace name</td></tr>
+                <tr><td><code>ttlSeconds</code></td><td>number?</td><td>Session lifetime (default: 3600)</td></tr>
+            </table>
+<pre><code>const session = await client.authenticate({
+  workspace: 'production',
+  ttlSeconds: 7200  // 2 hours
+});
+
+console.log(session.sessionId);  // "sess_abc123..."
+console.log(session.expiresAt);  // Date object</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>store(options)</h3>
+            <p>Store a secret.</p>
+            <table class="param-table">
+                <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+                <tr><td><code>sessionId</code></td><td>string</td><td>Active session ID</td></tr>
+                <tr><td><code>name</code></td><td>string</td><td>Secret name</td></tr>
+                <tr><td><code>value</code></td><td>Buffer</td><td>Secret value</td></tr>
+                <tr><td><code>labels</code></td><td>Record&lt;string, string&gt;?</td><td>Optional metadata</td></tr>
+                <tr><td><code>expiresAt</code></td><td>Date?</td><td>Optional expiration</td></tr>
+            </table>
+<pre><code>await client.store({
+  sessionId: session.sessionId,
+  name: 'DATABASE_URL',
+  value: Buffer.from('postgres://...'),
+  labels: { environment: 'production', service: 'api' },
+  expiresAt: new Date('2025-12-31')
+});</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>retrieve(options)</h3>
+            <p>Retrieve a secret value.</p>
+            <table class="param-table">
+                <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+                <tr><td><code>sessionId</code></td><td>string</td><td>Active session ID</td></tr>
+                <tr><td><code>name</code></td><td>string</td><td>Secret name</td></tr>
+                <tr><td><code>version</code></td><td>number?</td><td>Specific version (default: latest)</td></tr>
+            </table>
+<pre><code>const secret = await client.retrieve({
+  sessionId: session.sessionId,
+  name: 'DATABASE_URL'
+});
+
+console.log(secret.value.toString());  // postgres://...
+console.log(secret.version);           // 1
+console.log(secret.labels);            // { environment: 'production', ... }</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>delete(options)</h3>
+            <p>Delete a secret.</p>
+<pre><code>await client.delete({
+  sessionId: session.sessionId,
+  name: 'OLD_API_KEY'
+});</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>list(options)</h3>
+            <p>List all secrets in the workspace.</p>
+<pre><code>const secrets = await client.list({
+  sessionId: session.sessionId,
+  labelFilter: { environment: 'production' }  // Optional filter
+});
+
+for (const secret of secrets) {
+  console.log(secret.name, secret.version);
+}</code></pre>
+        </div>
+
+        <div class="api-section">
+            <h3>rotate(options)</h3>
+            <p>Update a secret with version tracking.</p>
+<pre><code>const result = await client.rotate({
+  sessionId: session.sessionId,
+  name: 'API_KEY',
+  newValue: Buffer.from('sk-new-key-...')
+});
+
+console.log(result.previousVersion);  // 1
+console.log(result.newVersion);       // 2</code></pre>
+        </div>
+
+        <h2>Error Handling</h2>
+<pre><code>import { AVPError, ErrorCode } from '@avp-protocol/sdk';
+
+try {
+  await client.retrieve({ sessionId, name: 'UNKNOWN_KEY' });
+} catch (error) {
+  if (error instanceof AVPError) {
+    switch (error.code) {
+      case ErrorCode.NOT_FOUND:
+        console.log('Secret not found');
+        break;
+      case ErrorCode.SESSION_EXPIRED:
+        console.log('Session expired, re-authenticate');
+        break;
+      case ErrorCode.UNAUTHORIZED:
+        console.log('Not authorized for this workspace');
+        break;
+      default:
+        console.log('AVP Error:', error.message);
+    }
+  }
+}</code></pre>
+
+        <h2>TypeScript Types</h2>
+<pre><code>import type {
+  AVPClient,
+  Backend,
+  Session,
+  Secret,
+  StoreOptions,
+  RetrieveOptions,
+  ListOptions,
+  RotateResult,
+  DiscoverInfo,
+  AVPError,
+  ErrorCode
+} from '@avp-protocol/sdk';</code></pre>
+
+        <h2>Browser Usage</h2>
+        <div class="note">
+            <strong>Note:</strong> In browser environments, only <code>MemoryBackend</code> is available. File and Keychain backends require Node.js.
+        </div>
+<pre><code>// Browser bundle
+import { AVPClient, MemoryBackend } from '@avp-protocol/sdk/browser';
+
+const client = new AVPClient({
+  backend: new MemoryBackend()
+});</code></pre>
+
+        <h2>Complete Example</h2>
+<pre><code>import { AVPClient, FileBackend } from '@avp-protocol/sdk';
+
+async function main() {
+  // Initialize client
+  const client = new AVPClient({
+    backend: new FileBackend({
+      path: './my-agent-vault.enc',
+      password: process.env.VAULT_PASSWORD!
+    })
+  });
+
+  // Create session
+  const session = await client.authenticate({
+    workspace: 'openai-agent'
+  });
+
+  // Store credentials
+  await client.store({
+    sessionId: session.sessionId,
+    name: 'OPENAI_API_KEY',
+    value: Buffer.from(process.env.OPENAI_API_KEY!),
+    labels: { provider: 'openai' }
+  });
+
+  // Use in your agent
+  const apiKey = await client.retrieve({
+    sessionId: session.sessionId,
+    name: 'OPENAI_API_KEY'
+  });
+
+  // Pass to OpenAI client
+  const openai = new OpenAI({
+    apiKey: apiKey.value.toString()
+  });
+
+  // Rotate when needed
+  await client.rotate({
+    sessionId: session.sessionId,
+    name: 'OPENAI_API_KEY',
+    newValue: Buffer.from('sk-new-key-...')
+  });
+}
+
+main().catch(console.error);</code></pre>
+
+        <footer style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <p style="color: var(--text-secondary);">
+                <a href="https://github.com/avp-protocol/avp-ts" style="color: var(--accent);">View on GitHub</a> ·
+                <a href="https://www.npmjs.com/package/@avp-protocol/sdk" style="color: var(--accent);">npm</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

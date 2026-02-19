@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrewAI Integration - AVP Documentation</title>
+    <link rel="icon" href="../assets/avp-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; margin-bottom: 2rem; }
+        .back-link:hover { color: var(--accent); }
+        h1 { color: var(--text-primary); margin-bottom: 0.5rem; }
+        h2 { color: var(--accent); margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { color: var(--text-primary); margin-top: 1.5rem; }
+        p, li { color: var(--text-secondary); line-height: 1.7; }
+        pre { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+        code { font-family: 'Fira Code', 'SF Mono', Monaco, monospace; font-size: 0.9rem; color: var(--accent); }
+        pre code { color: var(--text-primary); }
+        .feature { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        .feature h4 { color: var(--accent); margin: 0 0 0.5rem 0; }
+        .note { background: rgba(0, 212, 170, 0.1); border-left: 3px solid var(--accent); padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .diagram { background: var(--bg-primary); border: 2px dashed var(--border); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; font-family: monospace; font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <div class="docs-container">
+        <a href="index.html" class="back-link">← Back to Docs</a>
+
+        <h1>CrewAI Integration</h1>
+        <p>Per-agent credential isolation for CrewAI multi-agent systems</p>
+
+        <h2>Installation</h2>
+<pre><code>pip install crewai-avp</code></pre>
+
+        <h2>Why Per-Agent Isolation?</h2>
+        <p>In CrewAI systems, multiple agents collaborate on tasks. Each agent may need different credentials with different permission levels:</p>
+
+        <div class="diagram">
+┌─────────────────────────────────────────────────────────────┐
+│                        CrewAI Crew                          │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │  Researcher │  │   Writer    │  │  Reviewer   │         │
+│  │   Agent     │  │   Agent     │  │   Agent     │         │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘         │
+│         │                │                │                 │
+│    workspace:       workspace:       workspace:             │
+│    "researcher"     "writer"         "reviewer"             │
+│         │                │                │                 │
+│  ┌──────▼──────┐  ┌──────▼──────┐  ┌──────▼──────┐         │
+│  │ SERP_API_KEY│  │OPENAI_KEY   │  │OPENAI_KEY   │         │
+│  │ ARXIV_TOKEN │  │GRAMMARLY_KEY│  │JIRA_TOKEN   │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+└─────────────────────────────────────────────────────────────┘
+        </div>
+
+        <h2>Quick Start</h2>
+<pre><code>from crewai import Agent, Task, Crew
+from crewai_avp import AVPAgentCredentials
+
+# Create credential manager
+creds = AVPAgentCredentials(
+    vault_path="~/.avp/vault.enc",
+    password="your-password"
+)
+
+# Create agents with isolated credentials
+researcher = Agent(
+    role="Research Analyst",
+    goal="Find relevant information",
+    backstory="Expert at finding data",
+    llm=creds.get_llm("researcher", provider="openai"),
+    tools=[creds.get_tool("researcher", "serp_search")]
+)
+
+writer = Agent(
+    role="Content Writer",
+    goal="Write compelling content",
+    backstory="Expert writer",
+    llm=creds.get_llm("writer", provider="anthropic")
+)
+
+# Create crew
+crew = Crew(
+    agents=[researcher, writer],
+    tasks=[...]
+)
+
+result = crew.kickoff()</code></pre>
+
+        <h2>Features</h2>
+
+        <div class="feature">
+            <h4>Per-Agent Workspaces</h4>
+            <p>Each agent gets its own isolated workspace. The researcher agent cannot access the writer's credentials and vice versa.</p>
+        </div>
+
+        <div class="feature">
+            <h4>Automatic LLM Configuration</h4>
+            <p>Get pre-configured LLM instances with credentials automatically injected from the vault.</p>
+        </div>
+
+        <div class="feature">
+            <h4>Tool Credential Injection</h4>
+            <p>Tools receive their required API keys automatically based on the agent's workspace.</p>
+        </div>
+
+        <div class="feature">
+            <h4>Audit Trail</h4>
+            <p>Track which agent accessed which credential and when.</p>
+        </div>
+
+        <h2>AVPAgentCredentials</h2>
+        <p>The main class for managing agent credentials.</p>
+
+<pre><code>from crewai_avp import AVPAgentCredentials, Backend
+
+# File backend (default)
+creds = AVPAgentCredentials(
+    vault_path="~/.avp/vault.enc",
+    password="your-password"
+)
+
+# Keychain backend
+creds = AVPAgentCredentials(backend=Backend.KEYCHAIN)
+
+# Memory backend (testing)
+creds = AVPAgentCredentials(backend=Backend.MEMORY)</code></pre>
+
+        <h3>Methods</h3>
+
+<pre><code># Store credentials for an agent workspace
+creds.store("researcher", "SERP_API_KEY", "...")
+creds.store("researcher", "ARXIV_TOKEN", "...")
+creds.store("writer", "OPENAI_API_KEY", "sk-...")
+
+# Get an LLM configured with agent's credentials
+llm = creds.get_llm("researcher", provider="openai", model="gpt-4")
+
+# Get a tool configured with agent's credentials
+search_tool = creds.get_tool("researcher", "serp_search")
+web_tool = creds.get_tool("researcher", "web_scraper")
+
+# Get raw credential value (use sparingly)
+api_key = creds.get("researcher", "SERP_API_KEY")
+
+# List credentials for an agent
+keys = creds.list("researcher")
+# ["SERP_API_KEY", "ARXIV_TOKEN"]
+
+# Check if credential exists
+if creds.has("researcher", "SERP_API_KEY"):
+    print("Key is configured")</code></pre>
+
+        <h2>Supported LLM Providers</h2>
+<pre><code># OpenAI
+llm = creds.get_llm("agent", provider="openai", model="gpt-4")
+# Looks for: OPENAI_API_KEY
+
+# Anthropic
+llm = creds.get_llm("agent", provider="anthropic", model="claude-3-opus")
+# Looks for: ANTHROPIC_API_KEY
+
+# Azure OpenAI
+llm = creds.get_llm("agent", provider="azure", model="gpt-4")
+# Looks for: AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT
+
+# Google
+llm = creds.get_llm("agent", provider="google", model="gemini-pro")
+# Looks for: GOOGLE_API_KEY
+
+# Ollama (local, no credentials needed)
+llm = creds.get_llm("agent", provider="ollama", model="llama2")</code></pre>
+
+        <h2>Supported Tools</h2>
+<pre><code># Search tools
+serp = creds.get_tool("agent", "serp_search")      # SERP_API_KEY
+ddg = creds.get_tool("agent", "duckduckgo")        # No key needed
+brave = creds.get_tool("agent", "brave_search")    # BRAVE_API_KEY
+
+# Web tools
+scraper = creds.get_tool("agent", "web_scraper")   # No key needed
+browser = creds.get_tool("agent", "browser")       # BROWSERLESS_API_KEY
+
+# Database tools
+sql = creds.get_tool("agent", "sql", db_uri="...")
+mongodb = creds.get_tool("agent", "mongodb", connection_string="...")
+
+# API tools
+github = creds.get_tool("agent", "github")         # GITHUB_TOKEN
+jira = creds.get_tool("agent", "jira")             # JIRA_TOKEN, JIRA_URL
+slack = creds.get_tool("agent", "slack")           # SLACK_BOT_TOKEN</code></pre>
+
+        <h2>Complete Example</h2>
+<pre><code>"""CrewAI research team with AVP credential management."""
+
+from crewai import Agent, Task, Crew, Process
+from crewai_avp import AVPAgentCredentials
+
+# Initialize credential manager
+creds = AVPAgentCredentials(
+    vault_path="~/.avp/research-crew.enc",
+    password="secure-password"
+)
+
+# Store credentials (do this once during setup)
+# creds.store("researcher", "SERP_API_KEY", "...")
+# creds.store("researcher", "OPENAI_API_KEY", "sk-...")
+# creds.store("analyst", "OPENAI_API_KEY", "sk-...")
+# creds.store("writer", "ANTHROPIC_API_KEY", "sk-ant-...")
+
+# Create agents with isolated credentials
+researcher = Agent(
+    role="Senior Research Analyst",
+    goal="Uncover cutting-edge developments in AI",
+    backstory="""You work at a leading tech think tank.
+    Your expertise lies in identifying emerging trends.""",
+    verbose=True,
+    allow_delegation=False,
+    llm=creds.get_llm("researcher", provider="openai", model="gpt-4"),
+    tools=[
+        creds.get_tool("researcher", "serp_search"),
+        creds.get_tool("researcher", "web_scraper")
+    ]
+)
+
+analyst = Agent(
+    role="Data Analyst",
+    goal="Analyze research data and extract insights",
+    backstory="""You are an expert data analyst with a keen eye
+    for patterns and trends in complex datasets.""",
+    verbose=True,
+    allow_delegation=False,
+    llm=creds.get_llm("analyst", provider="openai", model="gpt-4")
+)
+
+writer = Agent(
+    role="Tech Content Strategist",
+    goal="Craft compelling content on tech advancements",
+    backstory="""You are a renowned Content Strategist, known for
+    your insightful and engaging articles.""",
+    verbose=True,
+    allow_delegation=True,
+    llm=creds.get_llm("writer", provider="anthropic", model="claude-3-opus")
+)
+
+# Define tasks
+research_task = Task(
+    description="""Conduct comprehensive research on the latest
+    AI agent frameworks in 2024. Focus on key players, features,
+    and market trends.""",
+    expected_output="A detailed research report with citations",
+    agent=researcher
+)
+
+analysis_task = Task(
+    description="""Analyze the research findings and identify
+    the top 3 emerging trends in AI agent development.""",
+    expected_output="Analysis report with trend predictions",
+    agent=analyst
+)
+
+writing_task = Task(
+    description="""Using the research and analysis, write an
+    engaging blog post about the future of AI agents.""",
+    expected_output="A 1500-word blog post in markdown format",
+    agent=writer
+)
+
+# Create and run crew
+crew = Crew(
+    agents=[researcher, analyst, writer],
+    tasks=[research_task, analysis_task, writing_task],
+    process=Process.sequential,
+    verbose=2
+)
+
+result = crew.kickoff()
+print(result)
+
+# Clean up
+creds.close()</code></pre>
+
+        <div class="note">
+            <strong>Best Practice:</strong> Create separate workspaces for each agent role, not each agent instance. This way, if you have multiple researcher agents, they share the same credential workspace but are still isolated from other roles.
+        </div>
+
+        <h2>Credential Setup Script</h2>
+        <p>Create a setup script to initialize credentials for your crew:</p>
+
+<pre><code>#!/usr/bin/env python3
+"""Setup script for CrewAI credentials."""
+
+from crewai_avp import AVPAgentCredentials
+import getpass
+
+def setup_credentials():
+    password = getpass.getpass("Vault password: ")
+
+    creds = AVPAgentCredentials(
+        vault_path="~/.avp/research-crew.enc",
+        password=password
+    )
+
+    # Researcher credentials
+    creds.store("researcher", "OPENAI_API_KEY",
+                getpass.getpass("Researcher OpenAI key: "))
+    creds.store("researcher", "SERP_API_KEY",
+                getpass.getpass("Researcher SERP key: "))
+
+    # Analyst credentials
+    creds.store("analyst", "OPENAI_API_KEY",
+                getpass.getpass("Analyst OpenAI key: "))
+
+    # Writer credentials
+    creds.store("writer", "ANTHROPIC_API_KEY",
+                getpass.getpass("Writer Anthropic key: "))
+
+    print("Credentials stored successfully!")
+    creds.close()
+
+if __name__ == "__main__":
+    setup_credentials()</code></pre>
+
+        <footer style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <p style="color: var(--text-secondary);">
+                <a href="https://github.com/avp-protocol/crewai-avp" style="color: var(--accent);">View on GitHub</a> ·
+                <a href="https://docs.crewai.com/" style="color: var(--accent);">CrewAI Docs</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

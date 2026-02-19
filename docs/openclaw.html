@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Integration - AVP Documentation</title>
+    <link rel="icon" href="../assets/avp-icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .docs-container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; margin-bottom: 2rem; }
+        .back-link:hover { color: var(--accent); }
+        h1 { color: var(--text-primary); margin-bottom: 0.5rem; }
+        h2 { color: var(--accent); margin-top: 2.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { color: var(--text-primary); margin-top: 1.5rem; }
+        p, li { color: var(--text-secondary); line-height: 1.7; }
+        pre { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+        code { font-family: 'Fira Code', 'SF Mono', Monaco, monospace; font-size: 0.9rem; color: var(--accent); }
+        pre code { color: var(--text-primary); }
+        .feature { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        .feature h4 { color: var(--accent); margin: 0 0 0.5rem 0; }
+        .warning { background: rgba(255, 193, 7, 0.1); border-left: 3px solid #ffc107; padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .note { background: rgba(0, 212, 170, 0.1); border-left: 3px solid var(--accent); padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0; }
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+        .comparison > div { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+        .comparison h4 { margin: 0 0 0.5rem 0; }
+        .bad { border-color: #dc3545 !important; }
+        .bad h4 { color: #dc3545; }
+        .good { border-color: var(--accent) !important; }
+        .good h4 { color: var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="docs-container">
+        <a href="index.html" class="back-link">← Back to Docs</a>
+
+        <h1>OpenClaw Integration</h1>
+        <p>Secure replacement for keys.json in OpenClaw agents</p>
+
+        <h2>The Problem</h2>
+        <p>OpenClaw agents typically store credentials in a <code>keys.json</code> file:</p>
+
+        <div class="comparison">
+            <div class="bad">
+                <h4>keys.json (Insecure)</h4>
+<pre><code>{
+  "openai": "sk-proj-xxx",
+  "anthropic": "sk-ant-xxx",
+  "serpapi": "xxx"
+}</code></pre>
+                <p style="font-size: 0.85rem; margin-top: 0.5rem;">Plaintext credentials on disk!</p>
+            </div>
+            <div class="good">
+                <h4>AVP (Secure)</h4>
+<pre><code>vault.enc (AES-256)
+├── openai_key
+├── anthropic_key
+└── serpapi_key</code></pre>
+                <p style="font-size: 0.85rem; margin-top: 0.5rem;">Encrypted with password</p>
+            </div>
+        </div>
+
+        <div class="warning">
+            <strong>Security Risk:</strong> Plaintext <code>keys.json</code> files are easily compromised through:
+            <ul style="margin-bottom: 0;">
+                <li>Accidental git commits</li>
+                <li>File system access by malicious processes</li>
+                <li>Backup exposure</li>
+                <li>Shoulder surfing</li>
+            </ul>
+        </div>
+
+        <h2>Installation</h2>
+<pre><code>pip install openclaw-avp</code></pre>
+
+        <h2>Quick Start</h2>
+<pre><code>from openclaw_avp import SecureKeyManager
+
+# Create secure key manager (replaces keys.json)
+keys = SecureKeyManager(
+    vault_path="~/.avp/openclaw.enc",
+    password="your-secure-password"
+)
+
+# Store keys (do this once)
+keys.set("openai", "sk-proj-...")
+keys.set("anthropic", "sk-ant-...")
+keys.set("serpapi", "...")
+
+# Use in your agent
+from openclaw import Agent
+
+agent = Agent(
+    name="my-agent",
+    llm_api_key=keys.get("openai"),
+    tools_config={
+        "search": {"api_key": keys.get("serpapi")}
+    }
+)</code></pre>
+
+        <h2>Migration from keys.json</h2>
+
+        <h3>Automatic Migration</h3>
+<pre><code>from openclaw_avp import migrate_from_keys_json
+
+# One-time migration
+migrate_from_keys_json(
+    keys_json_path="./keys.json",
+    vault_path="~/.avp/openclaw.enc",
+    password="your-password"
+)
+
+# Output:
+# Migrated 3 keys:
+#   - openai
+#   - anthropic
+#   - serpapi
+#
+# You can now delete keys.json</code></pre>
+
+        <h3>Manual Migration</h3>
+<pre><code># Using CLI
+avp import keys.json --format json --workspace openclaw
+
+# Then update your agent code to use AVP</code></pre>
+
+        <h2>SecureKeyManager API</h2>
+
+<pre><code>from openclaw_avp import SecureKeyManager, Backend
+
+# File backend (default, encrypted)
+keys = SecureKeyManager(
+    vault_path="~/.avp/openclaw.enc",
+    password="password"
+)
+
+# Keychain backend (OS-native)
+keys = SecureKeyManager(backend=Backend.KEYCHAIN)
+
+# Memory backend (testing only)
+keys = SecureKeyManager(backend=Backend.MEMORY)</code></pre>
+
+        <h3>Methods</h3>
+<pre><code># Store a key
+keys.set("openai", "sk-proj-...")
+
+# Retrieve a key
+api_key = keys.get("openai")
+
+# Check if key exists
+if keys.has("openai"):
+    print("OpenAI key configured")
+
+# List all keys
+all_keys = keys.list()
+# ["openai", "anthropic", "serpapi"]
+
+# Delete a key
+keys.delete("old_key")
+
+# Rotate a key
+keys.rotate("openai", "sk-proj-new-...")</code></pre>
+
+        <h2>Drop-in Replacement</h2>
+        <p>Update your existing OpenClaw agent with minimal changes:</p>
+
+        <div class="comparison">
+            <div class="bad">
+                <h4>Before (keys.json)</h4>
+<pre><code>import json
+
+with open("keys.json") as f:
+    keys = json.load(f)
+
+agent = Agent(
+    llm_api_key=keys["openai"],
+    ...
+)</code></pre>
+            </div>
+            <div class="good">
+                <h4>After (AVP)</h4>
+<pre><code>from openclaw_avp import SecureKeyManager
+
+keys = SecureKeyManager(
+    "~/.avp/vault.enc", "pass"
+)
+
+agent = Agent(
+    llm_api_key=keys.get("openai"),
+    ...
+)</code></pre>
+            </div>
+        </div>
+
+        <h2>Environment Variable Bridge</h2>
+        <p>If your agent reads from environment variables, use the bridge mode:</p>
+
+<pre><code>from openclaw_avp import SecureKeyManager
+
+keys = SecureKeyManager(
+    vault_path="~/.avp/openclaw.enc",
+    password="password"
+)
+
+# Load keys into environment variables
+keys.load_to_env([
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "SERPAPI_API_KEY"
+])
+
+# Now your agent can use os.getenv() as before
+import os
+api_key = os.getenv("OPENAI_API_KEY")  # Works!</code></pre>
+
+        <div class="note">
+            <strong>Note:</strong> Environment variables are still in memory, but this approach avoids plaintext files on disk. For maximum security, use <code>keys.get()</code> directly.
+        </div>
+
+        <h2>Complete Example</h2>
+<pre><code>"""OpenClaw agent with secure credential management."""
+
+from openclaw import Agent, Tool
+from openclaw_avp import SecureKeyManager
+import os
+
+def create_secure_agent():
+    # Initialize secure key manager
+    keys = SecureKeyManager(
+        vault_path=os.path.expanduser("~/.avp/openclaw.enc"),
+        password=os.getenv("AVP_PASSWORD")  # Password from env, not keys!
+    )
+
+    # Create agent with secure credentials
+    agent = Agent(
+        name="research-assistant",
+        description="An AI research assistant",
+        llm_provider="openai",
+        llm_api_key=keys.get("openai"),
+        llm_model="gpt-4",
+        tools=[
+            Tool(
+                name="web_search",
+                description="Search the web",
+                config={"api_key": keys.get("serpapi")}
+            ),
+            Tool(
+                name="arxiv",
+                description="Search academic papers",
+                config={"api_key": keys.get("arxiv")}
+            )
+        ]
+    )
+
+    return agent
+
+def main():
+    agent = create_secure_agent()
+
+    # Run agent
+    result = agent.run("Find recent papers on transformer architectures")
+    print(result)
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+        <h2>Setup Script</h2>
+        <p>Create a setup script for first-time configuration:</p>
+
+<pre><code>#!/usr/bin/env python3
+"""First-time setup for OpenClaw with AVP."""
+
+from openclaw_avp import SecureKeyManager
+import getpass
+import os
+
+def setup():
+    print("OpenClaw Secure Credential Setup")
+    print("=" * 40)
+
+    vault_path = os.path.expanduser("~/.avp/openclaw.enc")
+
+    # Get vault password
+    password = getpass.getpass("Create vault password: ")
+    confirm = getpass.getpass("Confirm password: ")
+
+    if password != confirm:
+        print("Passwords don't match!")
+        return
+
+    # Initialize key manager
+    keys = SecureKeyManager(vault_path=vault_path, password=password)
+
+    # Collect API keys
+    print("\nEnter your API keys (press Enter to skip):\n")
+
+    openai = getpass.getpass("OpenAI API key: ")
+    if openai:
+        keys.set("openai", openai)
+        print("  ✓ OpenAI key stored")
+
+    anthropic = getpass.getpass("Anthropic API key: ")
+    if anthropic:
+        keys.set("anthropic", anthropic)
+        print("  ✓ Anthropic key stored")
+
+    serpapi = getpass.getpass("SerpAPI key: ")
+    if serpapi:
+        keys.set("serpapi", serpapi)
+        print("  ✓ SerpAPI key stored")
+
+    print(f"\n✓ Credentials stored in {vault_path}")
+    print("\nTo use in your agent:")
+    print(f'  keys = SecureKeyManager("{vault_path}", password)')
+    print('  api_key = keys.get("openai")')
+
+    keys.close()
+
+if __name__ == "__main__":
+    setup()</code></pre>
+
+        <h2>Best Practices</h2>
+        <ul>
+            <li><strong>Never commit vault files</strong> - Add <code>*.enc</code> to <code>.gitignore</code></li>
+            <li><strong>Use strong passwords</strong> - Generate with <code>avp generate-password</code></li>
+            <li><strong>Store password securely</strong> - Use environment variable or keychain for vault password</li>
+            <li><strong>Delete keys.json</strong> - After migration, securely delete the plaintext file</li>
+            <li><strong>Rotate keys regularly</strong> - Use <code>keys.rotate()</code> when updating credentials</li>
+        </ul>
+
+        <footer style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <p style="color: var(--text-secondary);">
+                <a href="https://github.com/avp-protocol/openclaw-avp" style="color: var(--accent);">View on GitHub</a> ·
+                <a href="https://github.com/openclaw" style="color: var(--accent);">OpenClaw</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
